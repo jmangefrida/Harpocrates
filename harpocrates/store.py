@@ -13,6 +13,7 @@ class Store(object):
         super(Store, self).__init__()
         self.con = sqlite3.connect("store.db")
         self.cur = self.con.cursor()
+        self.build_schema()
 
     def build_schema(self):
         
