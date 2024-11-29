@@ -5,16 +5,19 @@ import base64
 import os
 import secrets
 from cryptography.fernet import Fernet, MultiFernet
-from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
+from cryptography.hazmat.primitives.asymmetric import rsa, padding
 # from cryptography.hazmat.primitives import fips
 
 
 class KeyKeeper(object):
     """docstring for KeyKeeper"""
-    def __init__(self):
+    def __init__(self, key):
         super(KeyKeeper, self).__init__()
         self._new_key = None
+        self._key = key
+
         # self.fips = fips.is_fips_mode_enabled
 
     def first_run_key(self, password):
@@ -77,4 +80,43 @@ class KeyKeeper(object):
 
     def encrypt_secret(self, secret):
         f = Fernet(self._key)
-        return f.encrypt(secret)
+        return f.encrypt(bytes(secret, 'utf-8'))
+
+    def prepare_secret(self, secret, host_pem):
+        """
+        Takes the system encrypted secret, decrypts and re-encrypt
+        using the public key of the host it will be sent to.
+        """
+
+        # f = MultiFernet([self._new_key, self._key])
+        f = Fernet(self._key)
+        plain_text = f.decrypt(secret)
+        public_key = serialization.load_pem_public_key(host_pem, None)
+        cipher_text = public_key.encrypt(
+            plain_text,
+            padding.OAEP(
+                mgf=padding.MGF1(algorithm=hashes.SHA256()),
+                algorithm=hashes.SHA256(),
+                label=None
+            )
+        )
+        
+        return cipher_text
+
+    def generate_key_pair(self):
+        """
+        Used when communicating with the client.  Each entity needs to create it's own key pair for
+         secure communication.
+        """
+        private_key = rsa.generate_private_key(public_exponent=65537, key_size=4096)
+        private_pem = private_key.private_bytes(
+            encoding=serialization.Encoding.PEM,
+            format=serialization.PrivateFormat.PKCS8,
+            encryption_algorithm=serialization.NoEncryption())
+
+        public_key = private_key.public_key()
+        public_pem = public_key.public_bytes(
+            encoding=serialization.Encoding.PEM,
+            format=serialization.PublicFormat.SubjectPublicKeyInfo)
+
+        return private_pem, public_pem
