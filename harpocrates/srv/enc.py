@@ -3,12 +3,13 @@ enc.py
 """
 import base64
 import os
-import secrets
+# import secrets
 from cryptography.fernet import Fernet, MultiFernet
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 from cryptography.hazmat.primitives.asymmetric import rsa, padding
-# from cryptography.hazmat.primitives import fips
+from cryptography.hazmat.backends.openssl import backend
+from cryptography.exceptions import InternalError
 
 
 class KeyKeeper(object):
@@ -17,8 +18,16 @@ class KeyKeeper(object):
         super(KeyKeeper, self).__init__()
         self._new_key = None
         self._key = key
+        self.fips = self.enable_fips()
 
         # self.fips = fips.is_fips_mode_enabled
+
+    def enable_fips(self):
+        try:
+            backend._enable_fips()
+            return True
+        except InternalError:
+            return False
 
     def first_run_key(self, password):
         """
@@ -82,24 +91,26 @@ class KeyKeeper(object):
         f = Fernet(self._key)
         return f.encrypt(bytes(secret, 'utf-8'))
 
-    def prepare_secret(self, secret, host_pem):
+    def prepare_secret(self, secret, client_pem):
         """
         Takes the system encrypted secret, decrypts and re-encrypt
-        using the public key of the host it will be sent to.
+        using the public key of the client it will be sent to.
         """
 
         # f = MultiFernet([self._new_key, self._key])
         f = Fernet(self._key)
         plain_text = f.decrypt(secret)
-        public_key = serialization.load_pem_public_key(host_pem, None)
-        cipher_text = public_key.encrypt(
-            plain_text,
-            padding.OAEP(
-                mgf=padding.MGF1(algorithm=hashes.SHA256()),
-                algorithm=hashes.SHA256(),
-                label=None
-            )
-        )
+        # public_key = serialization.load_pem_public_key(client_pem, None)
+        # cipher_text = public_key.encrypt(
+        #     plain_text,
+        #     padding.OAEP(
+        #         mgf=padding.MGF1(algorithm=hashes.SHA256()),
+        #         algorithm=hashes.SHA256(),
+        #         label=None
+        #     )
+        # )
+
+        cipher_text = KeyKeeper.encrypt_with_client_key(plain_text, client_pem)
         
         return cipher_text
 
@@ -120,3 +131,17 @@ class KeyKeeper(object):
             format=serialization.PublicFormat.SubjectPublicKeyInfo)
 
         return private_pem, public_pem
+
+    @staticmethod
+    def encrypt_with_client_key(data, client_pem):
+        public_key = serialization.load_der_public_key(client_pem, None)
+        cipher_text = public_key.encrypt(
+            data,
+            padding.OAEP(
+                mgf=padding.MGF1(algorithm=hashes.SHA256()),
+                algorithm=hashes.SHA256(),
+                label=None
+                )
+            )
+
+        return cipher_text
