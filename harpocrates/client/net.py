@@ -30,12 +30,14 @@ sec_com.salt = sock.recv(1024).strip().decode()
 print("generating key")
 sec_com.generate_shared_key()
 print("sending message")
-msg = """Hello there.
-		 How are you doing today?
-"""
-msg = sec_com.encrypt(msg)
-# print(msg)
-sock.sendall(msg)
-msg = sock.recv(1024) 
-print(sec_com.decrypt(msg))
 
+
+while True:
+    msg = input("msg:")
+    if msg == "end":
+        exit
+    msg = sec_com.encrypt(msg)
+    # print(msg)
+    sock.sendall(msg)
+    msg = sock.recv(1024) 
+    print(sec_com.decrypt(msg))

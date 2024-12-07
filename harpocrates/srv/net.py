@@ -8,7 +8,7 @@ import socketserver
 from enc import SecureComm
 
 
-class MyTCPHandler(socketserver.BaseRequestHandler):
+class TCPHandler(socketserver.BaseRequestHandler):
     """
     The request handler class for our server.
 
@@ -63,11 +63,26 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
         pass
 
 
-# if __name__ == "__main__":
-HOST, PORT = "localhost", 9999
+class ThreadServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
+    def __init__(self, ip_port) -> None:
+        super(ThreadServer, self).__init__(ip_port, TCPHandler)
 
-# Create the server, binding to localhost on port 9999
-with socketserver.TCPServer((HOST, PORT), MyTCPHandler) as server:
-    # Activate the server; this will keep running until you
-    # interrupt the program with Ctrl-C
-    server.serve_forever()
+
+if __name__ == "__main__":
+    HOST, PORT = "localhost", 9999
+    
+    # Create the server, binding to localhost on port 9999
+    server = ThreadServer((HOST, PORT), TCPHandler)
+    
+    with server:
+        ip, port = server.server_address
+    
+        server_thread = threading.Thread(target=server.serve_forever)
+        server_thread.daemon = False
+        server_thread.start()
+        # Activate the server; this will keep running until you
+        # interrupt the program with Ctrl-C
+        print("server running")
+        input("sdf")
+        print("shuting down")
+        server.shutdown()
