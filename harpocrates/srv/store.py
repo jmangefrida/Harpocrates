@@ -5,8 +5,10 @@ store.py
 
 import sqlite3
 
+
 class ItemExistsError(Exception):
     pass
+
 
 class Store(object):
     """docstring for Store"""

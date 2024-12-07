@@ -3,11 +3,13 @@ enc.py
 """
 import base64
 import os
-# import secrets
+import secrets
 from cryptography.fernet import Fernet, MultiFernet
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
+from cryptography.hazmat.primitives.kdf.hkdf import HKDF
 from cryptography.hazmat.primitives.asymmetric import rsa, padding
+from cryptography.hazmat.primitives.asymmetric.x448 import X448PrivateKey, X448PublicKey
 from cryptography.hazmat.backends.openssl import backend
 from cryptography.exceptions import InternalError
 
@@ -114,7 +116,8 @@ class KeyKeeper(object):
         
         return cipher_text
 
-    def generate_key_pair(self):
+    @staticmethod
+    def generate_key_pair():
         """
         Used when communicating with the client.  Each entity needs to create it's own key pair for
          secure communication.
@@ -132,9 +135,16 @@ class KeyKeeper(object):
 
         return private_pem, public_pem
 
+    def secure_comm(self, peer_public_key):
+        private_key = X448PrivateKey.generate()
+        shared_key = private_key.exchange(peer_public_key)
+        derived_key = HKDF(algorithm=hashes.SHA256(), length=32, salt=None, info=b'handshake data').derive(shared_key)
+
+        return derived_key
+
     @staticmethod
     def encrypt_with_client_key(data, client_pem):
-        public_key = serialization.load_der_public_key(client_pem, None)
+        public_key = serialization.load_pem_public_key(client_pem, None)
         cipher_text = public_key.encrypt(
             data,
             padding.OAEP(
@@ -145,3 +155,51 @@ class KeyKeeper(object):
             )
 
         return cipher_text
+
+
+class SecureComm(object):
+
+    def __init__(self) -> None:
+        self.private_key = X448PrivateKey.generate()
+        self.public_key = self.private_key.public_key()
+        self.peer_public_key = None
+        self.info = b'Harpocates'
+
+    def send_key(self):
+        pub_key = self.public_key.public_bytes_raw()
+        self.public_key = X448PublicKey.from_public_bytes(pub_key)
+        # self.public_key.from_public_bytes(pub_key)
+        return pub_key
+
+    def rec_key(self, peer_key):
+
+        self.peer_public_key = X448PublicKey.from_public_bytes(peer_key)
+
+    def generate_handshake_data(self):
+        # self.peer_public_key = peer_public_key
+        self.salt = secrets.token_urlsafe(32)
+        
+        return self.salt.encode()
+        # self.peer_public_key.encrypt(token)
+
+    def generate_shared_key(self):
+        if self.peer_public_key is None:
+            raise Exception("No peer key")
+        shared_key = self.private_key.exchange(self.peer_public_key)
+        derived_key = HKDF(
+            algorithm=hashes.SHA256(),
+            length=32,
+            salt=self.salt.encode(),
+            info=self.info,
+            ).derive(shared_key)
+
+        self.f = Fernet(base64.urlsafe_b64encode(derived_key))
+
+    def encrypt(self, data):
+        return self.f.encrypt(data.encode())
+
+    def decrypt(self, data):
+        return self.f.decrypt(data).decode()
+
+
+

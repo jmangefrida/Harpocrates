@@ -58,7 +58,10 @@ class Client(object):
     def load(name, store):
        
         result = store.read('client', ['name', 'ip_address', 'role', 'public_key'], {'name': name})
-        return Client(*result)
+        if len(result) > 0:
+            return Client(*result)
+        else:
+            return None
 
 
 class RoleGrant(object):
