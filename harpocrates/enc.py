@@ -132,15 +132,11 @@ class KeyKeeper(object):
         public_pem = public_key.public_bytes(
             encoding=serialization.Encoding.PEM,
             format=serialization.PublicFormat.SubjectPublicKeyInfo)
+        # public_bytes = public_key.public_bytes(
+        #    encoding=serialization.Encoding.Raw,
+        #    format=serialization.PublicFormat.Raw)
 
         return private_pem, public_pem
-
-    def secure_comm(self, peer_public_key):
-        private_key = X448PrivateKey.generate()
-        shared_key = private_key.exchange(peer_public_key)
-        derived_key = HKDF(algorithm=hashes.SHA256(), length=32, salt=None, info=b'handshake data').derive(shared_key)
-
-        return derived_key
 
     @staticmethod
     def encrypt_with_client_key(data, client_pem):
@@ -159,27 +155,30 @@ class KeyKeeper(object):
 
 class SecureComm(object):
 
-    def __init__(self) -> None:
+    def __init__(self, sock) -> None:
         self.private_key = X448PrivateKey.generate()
         self.public_key = self.private_key.public_key()
         self.peer_public_key = None
         self.info = b'Harpocates'
+        self.sock = sock
 
     def send_key(self):
         pub_key = self.public_key.public_bytes_raw()
         self.public_key = X448PublicKey.from_public_bytes(pub_key)
         # self.public_key.from_public_bytes(pub_key)
-        return pub_key
+        self.sock.sendall(pub_key)
+        # return pub_key
 
-    def rec_key(self, peer_key):
+    def rec_key(self, ):
+        peer_key = self.sock.recv(56)
 
         self.peer_public_key = X448PublicKey.from_public_bytes(peer_key)
 
-    def generate_handshake_data(self):
+    def send_salt_data(self):
         # self.peer_public_key = peer_public_key
         self.salt = secrets.token_urlsafe(32)
         
-        return self.salt.encode()
+        self.sock.sendall(self.salt.encode())
         # self.peer_public_key.encrypt(token)
 
     def generate_shared_key(self):
@@ -196,10 +195,20 @@ class SecureComm(object):
         self.f = Fernet(base64.urlsafe_b64encode(derived_key))
 
     def encrypt(self, data):
-        return self.f.encrypt(data.encode())
+        return self.f.encrypt(data)
+
+    def sendall(self, data):
+        self.encrypt(data)
+        print(len(data))
+        self.sock.sendall(self.encrypt(data))
 
     def decrypt(self, data):
-        return self.f.decrypt(data).decode()
+        return self.f.decrypt(data)
 
-
+    def recv(self, buffer):
+        data = self.sock.recv(buffer).strip()
+        print(len(data))
+        if data == b'':
+            return False
+        return self.decrypt(data)
 

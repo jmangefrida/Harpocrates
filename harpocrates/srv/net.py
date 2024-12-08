@@ -2,6 +2,7 @@
 net.py
 '''
 
+import re
 import socket
 import threading
 import socketserver
@@ -23,19 +24,26 @@ class TCPHandler(socketserver.BaseRequestHandler):
         print("starting handshake")
         self.hand_shake()
 
+        msg = ''
         while True:
             # msg = self.rfile.readline().strip()
-            msg = self.request.recv(1024).strip()
-            if msg == b'':
+            # msg = self.request.recv(1024).strip()
+            try:
+                msg = self.sec_com.recv(2048)
+                if msg is False:
+                    return
+            except ConnectionResetError:
                 return
+
             # print(msg)
-            self.data = self.sec_com.decrypt(msg)
+            # self.data = self.sec_com.decrypt(msg)
             print("{} wrote:".format(self.client_address[0]))
-            print(self.data)
+            print(msg.decode())
             # Likewise, self.wfile is a file-like object used to write back
             # to the client
             # self.wfile.write(self.sec_com.encrypt(self.data.upper()))
-            self.request.sendall(self.sec_com.encrypt(self.data.upper()))
+            # self.request.sendall(self.sec_com.encrypt(self.data.upper()))
+            self.sec_com.sendall(msg.upper())
 
     def hand_shake(self):
         """
@@ -45,16 +53,17 @@ class TCPHandler(socketserver.BaseRequestHandler):
         Server generates handshake data (salt)
         Both sides generate shared key and finish handshake
         """
-        self.sec_com = SecureComm()
+        self.sec_com = SecureComm(self.request)
         # Read client key
-        self.data = self.request.recv(56)
+        # self.data = self.request.recv(56)
         # Instantiate securecomm object
-        self.sec_com.rec_key(self.data)
+        self.sec_com.rec_key()
         # Send client our public key
-        self.request.sendall(self.sec_com.send_key())
+        # self.request.sendall(self.sec_com.send_key())
+        self.sec_com.send_key()
         # Send salt
-        self.data = self.sec_com.generate_handshake_data()
-        self.request.sendall(self.data)
+        self.sec_com.send_salt_data()
+        # self.request.sendall(self.data)
         # finish handshake
         self.sec_com.generate_shared_key()
         print('handshake done')
