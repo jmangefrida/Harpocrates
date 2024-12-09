@@ -4,6 +4,7 @@ client/net.py
 
 from enc import KeyKeeper, SecureComm
 import socket
+import base64
 
 
 class NetClient():
@@ -16,7 +17,9 @@ class NetClient():
         Does a two-way handshake with the server, exchanging keys
         and making a shared key using X448
         """
+
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.sock.settimeout(10)
         self.sock.connect((self.ip, self.port))
         # print("connected")
         self.sec_com = SecureComm(self.sock)
@@ -38,6 +41,7 @@ class NetClient():
         msg = self.sec_com.recv(1024)
         print(msg.decode())
 
+
     def authenticate(self,):
         self.sec_com.sendall("AUTHENTICATE".encode())
 
@@ -47,14 +51,20 @@ class NetClient():
     def register_image(self, user, password, pub_key):
 
         self.sec_com.sendall("REGISTER_IMG".encode())
-        self.sec_com.recv(1024)
-        self.sec_com.sendall(b'user' + user.encode())
-        self.sec_com.recv(1024)
-        print('sent' + user)
-        self.sec_com.recv(1024)
-        self.sec_com.sendall(password.encode())
-        self.sec_com.recv(1024)
+        print(self.sec_com.recv(1024).decode())
+        self.sec_com.sendall(user.encode())
+        print(self.sec_com.recv(1024).decode())
+        # print('sent' + user)
+        # self.sec_com.recv(1024)
+        self.sec_com.sendall(b'sdf' + password.encode())
+        print('sent' + password)
+        print(self.sec_com.recv(1024).decode())
+        # pub_key = base64.urlsafe_b64encode(pub_key)
         self.sec_com.sendall(pub_key)
+        print('sent ' + str(pub_key))
+        print(self.sec_com.recv(1024).decode())
+        print(self.sec_com.recv(1024).decode())
+
 
     def close(self):
         self.sec_com.sendall(b'')

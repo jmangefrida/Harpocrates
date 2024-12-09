@@ -16,13 +16,21 @@ from cryptography.exceptions import InternalError
 
 class KeyKeeper(object):
     """docstring for KeyKeeper"""
-    def __init__(self, key):
+    def __init__(self, store, user=None):
         super(KeyKeeper, self).__init__()
+        self.store = store
         self._new_key = None
-        self._key = key
+        self._key = None
         self.fips = self.enable_fips()
+        if user is not None:
+            self._load_primary_key(user)
 
         # self.fips = fips.is_fips_mode_enabled
+
+    def _load_primary_key(self, user):
+        # key = self.store.read('setting', ['enc_key'], {1: 1})[0]
+        pass
+
 
     def enable_fips(self):
         try:
@@ -31,12 +39,12 @@ class KeyKeeper(object):
         except InternalError:
             return False
 
-    def first_run_key(self, password):
+    def first_run_key(self):
         """
         Should only be run for the first setup
         """
         self._generate_primary_key()
-        return self.update_user_pass(password)
+        # return self.update_user_pass(password)
 
     def re_encrypt_secret(self, secret):
         """
@@ -59,35 +67,23 @@ class KeyKeeper(object):
 
         self._key = Fernet.generate_key()
 
-    def _hash_pass(self, password, salt):
-        kdf = PBKDF2HMAC(
-            algorithm=hashes.SHA256(),
-            length=32,
-            salt=salt,
-            iterations=500000)
-
-        token = kdf.derive(bytes(password, 'UTF-8'))
-        key = base64.urlsafe_b64encode(token)
-
-        return key
-
     def unlock_primary_key(self, password, salt, enc_key):
-        key = self._hash_pass(password, salt)
+        key = KeyKeeper.hash_pass(password, salt)
         f = Fernet(key)
         self._key = f.decrypt(enc_key)
 
     def update_user_pass(self, password):
         """
-        When passwords are changed, we need to re-encrypt the key
-        viceversa as well.  Make sure to use newest generation of key
+        When passwords are changed, we need to re-encrypt the system key
+        using the users hashed password as key and treating system key as token
         """
 
-        key = self._new_key or self._key
+        token = self._new_key or self._key
         salt = os.urandom(16)
-        key = self._hash_pass(password, salt)
-        f = Fernet(key)
+        user_key = KeyKeeper.hash_pass(password, salt)
+        f = Fernet(user_key)
 
-        return f.encrypt(key), salt
+        return f.encrypt(token), salt
 
     def encrypt_secret(self, secret):
         f = Fernet(self._key)
@@ -115,6 +111,19 @@ class KeyKeeper(object):
         cipher_text = KeyKeeper.encrypt_with_client_key(plain_text, client_pem)
         
         return cipher_text
+
+    @staticmethod
+    def hash_pass(password, salt):
+        kdf = PBKDF2HMAC(
+            algorithm=hashes.SHA256(),
+            length=32,
+            salt=salt,
+            iterations=500000)
+
+        token = kdf.derive(bytes(password, 'UTF-8'))
+        key = base64.urlsafe_b64encode(token)
+
+        return key
 
     @staticmethod
     def generate_key_pair():
@@ -198,17 +207,19 @@ class SecureComm(object):
         return self.f.encrypt(data)
 
     def sendall(self, data):
-        self.encrypt(data)
-        print(len(data))
-        self.sock.sendall(self.encrypt(data))
+        data = self.encrypt(data)
+        data = base64.urlsafe_b64encode(data)
+        # print(len(data))
+        self.sock.sendall(data)
 
     def decrypt(self, data):
         return self.f.decrypt(data)
 
     def recv(self, buffer):
         data = self.sock.recv(buffer).strip()
-        print(len(data))
+        # print(len(data))
+        data = base64.urlsafe_b64decode(data)
         if data == b'':
-            return False
+            return b''
         return self.decrypt(data)
 

@@ -18,13 +18,17 @@ class Store(object):
         self.con = sqlite3.connect("store.db")
         self.cur = self.con.cursor()
         self.build_schema()
+        print(self.cur.execute("select username from user where username = testadmin", ()).fetchall())
 
     def build_schema(self):
         
         self.cur.execute("""CREATE TABLE IF NOT EXISTS user(
                          username VARCHAR(32) PRIMARY KEY,
                          salt VARCHAR(32),
-                         password VARCHAR(255))""")
+                         enc_key VARCHAR(255),
+                         register_date VARCHAR(255),
+                         last_pass_change VARCHAR(255),
+                         account_type VARCHAR(32))""")
         self.cur.execute("""CREATE TABLE IF NOT EXISTS setting(
                          enc_key VARCHAR(255))""")
         self.cur.execute("""CREATE TABLE IF NOT EXISTS secret(
@@ -66,10 +70,12 @@ class Store(object):
         keys = list(data.keys())
         values = list(data.values())
         marks = ", ".join(['?'] * len(keys))
+        keys = ", ".join(keys)
 
         query = "INSERT INTO {} ({}) VALUES ({})".format(table, keys, marks)
         print(query)
         self.cur.execute(query, values)
+        self.cur.execute('commit')
         return True
 
     def find(self, table, fields, filters):
@@ -77,13 +83,17 @@ class Store(object):
         marks, filters = Store.encode_filters(filters)
         query = "SELECT {} from {} where {}".format(fields, table, marks)
         result = self.cur.execute(query, filters).fetchall()
+        print(result)
         return result
 
     def read(self, table, fields, filters):
         fields = ', '.join(fields)
         marks, filters = Store.encode_filters(filters)
         query = "SELECT {} from {} where {}".format(fields, table, marks)
+        print(query)
+        print(filters)
         result = self.cur.execute(query, filters).fetchone()
+        print(result)
         return result
 
     def update(self, table, values, filters):

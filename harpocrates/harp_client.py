@@ -9,8 +9,8 @@ private_key, public_key = KeyKeeper.generate_key_pair()
 client = net.NetClient(HOST, PORT)
 
 client.connect()
-client.authenticate()
+# client.authenticate()
 
 # encoded_key = 
-client.register_image("admin", "123", public_key)
+client.register_image("testadmin", "passs", public_key)
 client.close()

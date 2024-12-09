@@ -6,7 +6,10 @@ import re
 import socket
 import threading
 import socketserver
+import base64
+# from socketserver import _RequestType, _RetAddress, BaseServer
 from enc import SecureComm
+from srv.user import User
 
 
 class TCPHandler(socketserver.BaseRequestHandler):
@@ -17,10 +20,19 @@ class TCPHandler(socketserver.BaseRequestHandler):
     override the handle() method to implement communication to the
     client.
     """
+    #def __init__(self, *args) -> None:
+    #    self.keeper = args[-1]
+    #    print(self.keeper)
+    #    print(args)
+    #    super(TCPHandler).__init__(*args)
 
     def handle(self):
+        self.request.settimeout(10)
         # self.rfile is a file-like object created by the handler;
         # we can now use e.g. readline() instead of raw recv() calls
+        self.server.main.counter += 1
+        print("count: " + str(self.server.main.counter))
+        #print(self.server.keeper._key)
         print("starting handshake")
         self.hand_shake()
 
@@ -32,18 +44,22 @@ class TCPHandler(socketserver.BaseRequestHandler):
                 msg = self.sec_com.recv(2048)
                 if msg is False:
                     return
-            except ConnectionResetError:
+            except (ConnectionResetError, AttributeError):
                 return
 
             # print(msg)
             # self.data = self.sec_com.decrypt(msg)
             print("{} wrote:".format(self.client_address[0]))
             print(msg.decode())
+            if msg.decode() == "REGISTER_IMG":
+                self.register_img()
+                return
             # Likewise, self.wfile is a file-like object used to write back
             # to the client
             # self.wfile.write(self.sec_com.encrypt(self.data.upper()))
             # self.request.sendall(self.sec_com.encrypt(self.data.upper()))
             self.sec_com.sendall(msg.upper())
+
 
     def hand_shake(self):
         """
@@ -68,14 +84,54 @@ class TCPHandler(socketserver.BaseRequestHandler):
         self.sec_com.generate_shared_key()
         print('handshake done')
 
+    def cmd(self):
+        pass
+
     def authenticate(self):
         pass
 
+    def register_img(self):
+        # try:
+            self.sec_com.sendall(b'OK1')
+            username = self.sec_com.recv(1024).decode()
+            print(username)
+            self.sec_com.sendall(b'OK2')
+            password = self.sec_com.recv(1024).decode()
+            print(password)
+            self.sec_com.sendall(b'OK3')
+            pub_key = self.sec_com.recv(2048).decode()
+            print(pub_key)
+        # except:
+            # print("error")
+            # return
+
+            # user = User.load(username, self.server.main.store)
+            r = self.server.main.register_img(username, password, pub_key)
+            print(r)
+            if r is True:
+                self.sec_com.sendall(b'OK4')
+            else:
+                self.sec_com.sendall(b'FAIL')
+
+            #pub_key = self.sec_com.recv(2048).decode()
+
+
 
 class ThreadServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
-    def __init__(self, ip_port) -> None:
-        super(ThreadServer, self).__init__(ip_port, TCPHandler)
 
+    def myhandler(self):
+        print("handled")
+
+    def __init__(self, ip_port, main) -> None:
+        super(ThreadServer, self).__init__(ip_port, TCPHandler)
+        self.main = main
+
+    class MyHandler(socketserver.BaseRequestHandler):
+
+        def handle(self):
+            print("handle")
+
+            return super().handle()
 
 if __name__ == "__main__":
     HOST, PORT = "localhost", 9999
