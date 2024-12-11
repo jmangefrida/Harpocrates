@@ -2,7 +2,7 @@
 auth.py
 '''
 
-from store import Store
+from srv.store import Store
 
 
 class Secret(object):
@@ -64,10 +64,10 @@ class Client(object):
             return None
 
 
-class RoleGrant(object):
+class Role(object):
     """docstring for GateKeeper"""
     def __init__(self):
-        super(RoleGrant, self).__init__()
+        super(Role, self).__init__()
         self.store = Store()
 
     def request(self, client, secret_name):

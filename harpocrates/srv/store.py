@@ -18,7 +18,7 @@ class Store(object):
         self.con = sqlite3.connect("store.db")
         self.cur = self.con.cursor()
         self.build_schema()
-        print(self.cur.execute("select username from user where username = testadmin", ()).fetchall())
+        print(self.cur.execute("select username from user where username = 'testadmin'", ()).fetchall())
 
     def build_schema(self):
         
@@ -122,14 +122,18 @@ class Store(object):
         [{f1: v1, f2:v2},{f3: v3}] is (f1=v1 and f2=v2) or (f3=v3)
         {f1: v1, or:[{f2: v2}, {f3: v3}]} is f1=v1 and (f2=v2 or f3=v3)
         """
-        marks = ' AND '.join(['? = ?'] * len(filters.keys()))
+        columns = [x + ' = ?' for x in filters.keys()]
+        marks = " AND ".join(columns)
+        values = list(filters.values())
+        #marks = ' AND '.join(['? = ?'] * len(filters.keys()))
         encoded = []
         for key, value in filters.items():
             # encoded.append("{} = {}".format(key, value))
             encoded.extend([key, value])
 
         print(encoded)
-        return marks, encoded
+        # return marks, encoded
+        return marks, values
 
     def new_user(self, username, salt, password):
         if self.value_exists('user', 'username', username):

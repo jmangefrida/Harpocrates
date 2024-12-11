@@ -1,6 +1,7 @@
 from srv.net import ThreadServer
 from srv.user import User
 from srv.store import Store
+from srv.cmd import Cmd
 import enc
 import threading
 
@@ -37,7 +38,8 @@ class Main():
         # self.store = Store()
         self.keeper = enc.KeyKeeper(None)
         self.keeper.first_run_key()
-        self.net_srv = ThreadServer((HOST, PORT), self)
+        self.cmd = Cmd()
+        self.net_srv = ThreadServer((HOST, PORT), self.cmd)
         self.counter = 0
 
     def test_run(self):
@@ -53,15 +55,6 @@ class Main():
         input("sdf")
         print("shuting down")
         self.net_srv.shutdown()
-
-    def register_img(self, username, password, image_name):
-        try:
-            user = User.load(username, Store())
-            print('user')
-        except:
-            print("no user")
-            return False
-
 
 
 if __name__ == "__main__":

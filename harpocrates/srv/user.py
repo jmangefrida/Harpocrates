@@ -3,6 +3,7 @@ user.py
 '''
 from os import access, stat
 from datetime import datetime
+from enc import KeyKeeper
 
 
 class User():
@@ -29,6 +30,9 @@ class User():
         self.last_pass_change = datetime.now()
         self.save()
 
+    def authenticate(self, password):
+        pass
+
     def save(self):
         self.store.update('user',
                           {'salt': self.salt,
@@ -48,7 +52,9 @@ class User():
                              'last_pass_change',
                              'account_type'],
                             {'username': username})
-        print(result)
+        result = list(result)
+        result.append(store)
+        # print(result)
         return User(*result)
 
     @staticmethod

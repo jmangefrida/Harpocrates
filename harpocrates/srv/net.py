@@ -10,6 +10,7 @@ import base64
 # from socketserver import _RequestType, _RetAddress, BaseServer
 from enc import SecureComm
 from srv.user import User
+from cmd import Cmd
 
 
 class TCPHandler(socketserver.BaseRequestHandler):
@@ -30,8 +31,8 @@ class TCPHandler(socketserver.BaseRequestHandler):
         self.request.settimeout(10)
         # self.rfile is a file-like object created by the handler;
         # we can now use e.g. readline() instead of raw recv() calls
-        self.server.main.counter += 1
-        print("count: " + str(self.server.main.counter))
+        self.server.cmd.counter += 1
+        print("count: " + str(self.server.cmd.counter))
         #print(self.server.keeper._key)
         print("starting handshake")
         self.hand_shake()
@@ -106,15 +107,14 @@ class TCPHandler(socketserver.BaseRequestHandler):
             # return
 
             # user = User.load(username, self.server.main.store)
-            r = self.server.main.register_img(username, password, pub_key)
+            r = self.server.cmd.register_img(username, password, pub_key)
             print(r)
-            if r is True:
+            if r is not False:
                 self.sec_com.sendall(b'OK4')
             else:
                 self.sec_com.sendall(b'FAIL')
 
-            #pub_key = self.sec_com.recv(2048).decode()
-
+            # pub_key = self.sec_com.recv(2048).decode()
 
 
 class ThreadServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
@@ -122,9 +122,9 @@ class ThreadServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
     def myhandler(self):
         print("handled")
 
-    def __init__(self, ip_port, main) -> None:
+    def __init__(self, ip_port, cmd) -> None:
         super(ThreadServer, self).__init__(ip_port, TCPHandler)
-        self.main = main
+        self.cmd = cmd
 
     class MyHandler(socketserver.BaseRequestHandler):
 
@@ -132,6 +132,7 @@ class ThreadServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
             print("handle")
 
             return super().handle()
+
 
 if __name__ == "__main__":
     HOST, PORT = "localhost", 9999

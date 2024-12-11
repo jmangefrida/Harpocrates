@@ -112,6 +112,9 @@ class KeyKeeper(object):
         
         return cipher_text
 
+    def check_pass(self, password, salt, enc_key):
+        pass
+
     @staticmethod
     def hash_pass(password, salt):
         kdf = PBKDF2HMAC(
