@@ -38,9 +38,8 @@ class NetClient():
         self.sec_com.generate_shared_key()
         # print("sending message")
         self.sec_com.sendall("hi".encode())
-        msg = self.sec_com.recv(1024)
+        msg = self.sec_com.recv()
         print(msg.decode())
-
 
     def authenticate(self,):
         self.sec_com.sendall("AUTHENTICATE".encode())
@@ -51,20 +50,19 @@ class NetClient():
     def register_image(self, user, password, pub_key):
 
         self.sec_com.sendall("REGISTER_IMG".encode())
-        print(self.sec_com.recv(1024).decode())
+        print(self.sec_com.recv().decode())
         self.sec_com.sendall(user.encode())
-        print(self.sec_com.recv(1024).decode())
+        print(self.sec_com.recv().decode())
         # print('sent' + user)
         # self.sec_com.recv(1024)
-        self.sec_com.sendall(b'sdf' + password.encode())
+        self.sec_com.sendall(password.encode())
         print('sent' + password)
-        print(self.sec_com.recv(1024).decode())
+        print(self.sec_com.recv().decode())
         # pub_key = base64.urlsafe_b64encode(pub_key)
         self.sec_com.sendall(pub_key)
         print('sent ' + str(pub_key))
-        print(self.sec_com.recv(1024).decode())
-        print(self.sec_com.recv(1024).decode())
-
+        print(self.sec_com.recv().decode())
+        print(self.sec_com.recv().decode())
 
     def close(self):
         self.sec_com.sendall(b'')

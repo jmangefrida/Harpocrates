@@ -15,19 +15,21 @@ class Store(object):
     
     def __init__(self):
         super(Store, self).__init__()
-        self.con = sqlite3.connect("store.db")
+        self.con = sqlite3.connect("store.db", check_same_thread=False)
         self.cur = self.con.cursor()
         self.build_schema()
-        print(self.cur.execute("select username from user where username = 'testadmin'", ()).fetchall())
+        # print(self.cur.execute("select username from user where username = 'testadmin'", ()).fetchall())
 
     def build_schema(self):
+        con = sqlite3.connect("store.db", check_same_thread=False)
+        cur = self.con.cursor()
         
         self.cur.execute("""CREATE TABLE IF NOT EXISTS user(
                          username VARCHAR(32) PRIMARY KEY,
-                         salt VARCHAR(32),
-                         enc_key VARCHAR(255),
-                         register_date VARCHAR(255),
-                         last_pass_change VARCHAR(255),
+                         salt BLOB,
+                         enc_key BLOB,
+                         register_date DATETIME,
+                         last_pass_change DATETIME,
                          account_type VARCHAR(32))""")
         self.cur.execute("""CREATE TABLE IF NOT EXISTS setting(
                          enc_key VARCHAR(255))""")
@@ -57,6 +59,7 @@ class Store(object):
                          registered_by VARCHAR(32),
                          role VARCHAR(64),
                          FOREIGN KEY (role) REFERENCES role (name))""")
+        con.commit()
 
     def value_exists(self, table, field, value):
         query = "SELECT COUNT(*) FROM " + table + " WHERE " + field + " = ?"
@@ -74,8 +77,12 @@ class Store(object):
 
         query = "INSERT INTO {} ({}) VALUES ({})".format(table, keys, marks)
         print(query)
+        print(values)
         self.cur.execute(query, values)
-        self.cur.execute('commit')
+        #self.cur.execute('commit')
+        self.con.commit()
+        r = self.cur.execute("select * from user", ()).fetchone()
+        print(r)
         return True
 
     def find(self, table, fields, filters):
@@ -90,19 +97,34 @@ class Store(object):
         fields = ', '.join(fields)
         marks, filters = Store.encode_filters(filters)
         query = "SELECT {} from {} where {}".format(fields, table, marks)
-        print(query)
-        print(filters)
+        query = "SELECT * from {} where {}".format(table, marks)
+        # print(query)
+        # print(filters)
         result = self.cur.execute(query, filters).fetchone()
+        print('select')
         print(result)
         return result
 
     def update(self, table, values, filters):
         # fields = ', '.join(values)
-        value_marks, enc_values = Store.encode_filters(values)
+        value_marks, enc_values = Store.encode_filters(values, True)
         filter_marks, filters = Store.encode_filters(filters)
         query = "UPDATE {} set {} WHERE {}".format(table, value_marks, filter_marks)
-
-        self.cur.execute(query, enc_values.extend(filters))
+        print(enc_values)
+        print(filters)
+        enc_values.extend(filters)
+        print(query)
+        enc_values = tuple(enc_values)
+        print(enc_values)
+        self.cur.execute(query, enc_values)
+        # self.cur.execute('update user set account_type = ? where username = ?', ('yello', 'testadmin'))
+        # self.cur.execute('commit')
+        self.con.commit()
+        r = self.cur.execute('select * from user', ()).fetchall()
+        print("updated")
+        for row in r:
+            print(row)
+        #self.con.close()
         return True
 
     def delete(self, table, filters):
@@ -116,14 +138,17 @@ class Store(object):
         return ", ".join(fields)
 
     @staticmethod
-    def encode_filters(filters):
+    def encode_filters(filters, update_select=False):
         """
         Convert multi-depth lists into sql format where caluse
         [{f1: v1, f2:v2},{f3: v3}] is (f1=v1 and f2=v2) or (f3=v3)
         {f1: v1, or:[{f2: v2}, {f3: v3}]} is f1=v1 and (f2=v2 or f3=v3)
         """
         columns = [x + ' = ?' for x in filters.keys()]
-        marks = " AND ".join(columns)
+        if update_select is True:
+            marks = ", ".join(columns)
+        else:
+            marks = " AND ".join(columns)
         values = list(filters.values())
         #marks = ' AND '.join(['? = ?'] * len(filters.keys()))
         encoded = []
@@ -131,7 +156,7 @@ class Store(object):
             # encoded.append("{} = {}".format(key, value))
             encoded.extend([key, value])
 
-        print(encoded)
+        # print(encoded)
         # return marks, encoded
         return marks, values
 

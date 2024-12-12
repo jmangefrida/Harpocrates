@@ -9,15 +9,20 @@ from srv.auth import Secret, Client, Role
 
 class Cmd(object):
     """docstring for Cmd"""
-    def __init__(self):
-        # self.store = Store()
+    def __init__(self, keeper, store):
+        self.store = store
         self.counter = 0
+        self.keeper = keeper
 
     def register_img(self, username, password, image_name):
-        try:
-            store = Store()
-            user = User.load(username, store)
+       # try:
+            user = User.load(username, self.store)
+            r = self.keeper.check_pass(password, user.salt, user.enc_key)
             print("user")
-        except Exception as e:
-            print(repr(e))
+            # print(user.salt)
+            print(r)
+            print(user.enc_key)
+            return r
+       # except Exception as e:
+            #print(repr(e))
             return False

@@ -12,5 +12,5 @@ client.connect()
 # client.authenticate()
 
 # encoded_key = 
-client.register_image("testadmin", "passs", public_key)
+client.register_image("testadmin", "password", public_key)
 client.close()

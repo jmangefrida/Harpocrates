@@ -32,9 +32,11 @@ class TCPHandler(socketserver.BaseRequestHandler):
         # self.rfile is a file-like object created by the handler;
         # we can now use e.g. readline() instead of raw recv() calls
         self.server.cmd.counter += 1
-        print("count: " + str(self.server.cmd.counter))
+        # print("count: " + str(self.server.cmd.counter))
+        print("system key:")
+        print(self.server.cmd.keeper._key)
         #print(self.server.keeper._key)
-        print("starting handshake")
+        # print("starting handshake")
         self.hand_shake()
 
         msg = ''
@@ -42,7 +44,7 @@ class TCPHandler(socketserver.BaseRequestHandler):
             # msg = self.rfile.readline().strip()
             # msg = self.request.recv(1024).strip()
             try:
-                msg = self.sec_com.recv(2048)
+                msg = self.sec_com.recv()
                 if msg is False:
                     return
             except (ConnectionResetError, AttributeError):
@@ -50,7 +52,7 @@ class TCPHandler(socketserver.BaseRequestHandler):
 
             # print(msg)
             # self.data = self.sec_com.decrypt(msg)
-            print("{} wrote:".format(self.client_address[0]))
+            # print("{} wrote:".format(self.client_address[0]))
             print(msg.decode())
             if msg.decode() == "REGISTER_IMG":
                 self.register_img()
@@ -94,14 +96,14 @@ class TCPHandler(socketserver.BaseRequestHandler):
     def register_img(self):
         # try:
             self.sec_com.sendall(b'OK1')
-            username = self.sec_com.recv(1024).decode()
-            print(username)
+            username = self.sec_com.recv().decode()
+            # print(username)
             self.sec_com.sendall(b'OK2')
-            password = self.sec_com.recv(1024).decode()
-            print(password)
+            password = self.sec_com.recv().decode()
+            # print(password)
             self.sec_com.sendall(b'OK3')
-            pub_key = self.sec_com.recv(2048).decode()
-            print(pub_key)
+            pub_key = self.sec_com.recv().decode()
+            # print(pub_key)
         # except:
             # print("error")
             # return

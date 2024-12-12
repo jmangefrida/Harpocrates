@@ -30,10 +30,13 @@ class User():
         self.last_pass_change = datetime.now()
         self.save()
 
-    def authenticate(self, password):
+    def authenticate(self, salt, password):
         pass
 
     def save(self):
+        print('saving :')
+        # print(self.salt)
+
         self.store.update('user',
                           {'salt': self.salt,
                            'enc_key': self.enc_key,
@@ -63,6 +66,8 @@ class User():
             raise Exception("user already exists")
 
         now = datetime.now()
+        print('creating')
+        print(enc_key)
         store.create('user',
                      {'username': username,
                       'salt': salt,

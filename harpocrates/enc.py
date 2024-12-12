@@ -4,6 +4,7 @@ enc.py
 import base64
 import os
 import secrets
+import threading
 from cryptography.fernet import Fernet, MultiFernet
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
@@ -12,18 +13,17 @@ from cryptography.hazmat.primitives.asymmetric import rsa, padding
 from cryptography.hazmat.primitives.asymmetric.x448 import X448PrivateKey, X448PublicKey
 from cryptography.hazmat.backends.openssl import backend
 from cryptography.exceptions import InternalError
+import time
 
 
 class KeyKeeper(object):
     """docstring for KeyKeeper"""
-    def __init__(self, store, user=None):
+    def __init__(self, store, key):
         super(KeyKeeper, self).__init__()
         self.store = store
         self._new_key = None
-        self._key = None
+        self._key = key
         self.fips = self.enable_fips()
-        if user is not None:
-            self._load_primary_key(user)
 
         # self.fips = fips.is_fips_mode_enabled
 
@@ -43,7 +43,7 @@ class KeyKeeper(object):
         """
         Should only be run for the first setup
         """
-        self._generate_primary_key()
+        KeyKeeper._generate_primary_key()
         # return self.update_user_pass(password)
 
     def re_encrypt_secret(self, secret):
@@ -63,10 +63,6 @@ class KeyKeeper(object):
         self._new_key = self._generate_primary_key()
         self.generation = self.generation + 1
 
-    def _generate_primary_key(self):
-
-        self._key = Fernet.generate_key()
-
     def unlock_primary_key(self, password, salt, enc_key):
         key = KeyKeeper.hash_pass(password, salt)
         f = Fernet(key)
@@ -78,12 +74,15 @@ class KeyKeeper(object):
         using the users hashed password as key and treating system key as token
         """
 
-        token = self._new_key or self._key
+        token = self._key
         salt = os.urandom(16)
-        user_key = KeyKeeper.hash_pass(password, salt)
+        user_key = KeyKeeper.hash_pass('password', salt)
+        print("hash key:")
+        print(user_key)
         f = Fernet(user_key)
-
-        return f.encrypt(token), salt
+        out_enc = f.encrypt(self._key)
+        print(out_enc)
+        return salt, out_enc
 
     def encrypt_secret(self, secret):
         f = Fernet(self._key)
@@ -113,10 +112,48 @@ class KeyKeeper(object):
         return cipher_text
 
     def check_pass(self, password, salt, enc_key):
-        pass
+        key = KeyKeeper.hash_pass(password, salt)
+        f = Fernet(key)
+        # print("system key:")
+        # print(self._key)
+        # print("hash key:")
+        # print(key)
+        # check_key = f.encrypt(self._key)
+        # print(check_key)
+        # time.sleep(2)
+        # check_key = f.encrypt(self._key)
+        # print(check_key)
+        # print(enc_key)
+        dec_key = f.decrypt(enc_key)
+        print(dec_key)
+        print(self._key)
+        print("enc_key")
+        print(enc_key)
+        if dec_key == self._key:
+            print("MATCH")
+            return True
+        else:
+            print("NOT MATCH")
+            return False
+
+    @staticmethod
+    def _generate_primary_key():
+
+        return Fernet.generate_key()
+    
+    @staticmethod
+    def decrypt_system_key(password, salt, enc_key):
+        print("enc_key")
+        print(enc_key)
+        key = KeyKeeper.hash_pass(password, salt)
+        f = Fernet(key)
+        return f.decrypt(enc_key)
 
     @staticmethod
     def hash_pass(password, salt):
+        # print("pass is:" + password)
+        # print("salt is: ")
+        # print(salt)
         kdf = PBKDF2HMAC(
             algorithm=hashes.SHA256(),
             length=32,
@@ -125,6 +162,8 @@ class KeyKeeper(object):
 
         token = kdf.derive(bytes(password, 'UTF-8'))
         key = base64.urlsafe_b64encode(token)
+        # print("key is:" + key.decode())
+
 
         return key
 
@@ -211,17 +250,21 @@ class SecureComm(object):
 
     def sendall(self, data):
         data = self.encrypt(data)
-        data = base64.urlsafe_b64encode(data)
+        length = len(data)
+        length = length.to_bytes(4, "little")
+        # data = base64.urlsafe_b64encode(data)
         # print(len(data))
-        self.sock.sendall(data)
+        self.sock.sendall(length+data)
 
     def decrypt(self, data):
         return self.f.decrypt(data)
 
-    def recv(self, buffer):
-        data = self.sock.recv(buffer).strip()
+    def recv(self):
+        length = self.sock.recv(4)
+        length = int.from_bytes(length)
+        data = self.sock.recv(length)
         # print(len(data))
-        data = base64.urlsafe_b64decode(data)
+        # data = base64.urlsafe_b64decode(data)
         if data == b'':
             return b''
         return self.decrypt(data)
