@@ -33,6 +33,9 @@ class KeyKeeper(object):
 
 
     def enable_fips(self):
+        """
+        This relies on the installed version of openssl being fips complient
+        """
         try:
             backend._enable_fips()
             return True

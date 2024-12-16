@@ -7,6 +7,7 @@ import socket
 import base64
 
 
+
 class NetClient():
     def __init__(self, ip, port) -> None:
         self.ip = ip
@@ -47,21 +48,29 @@ class NetClient():
     def register_client(self):
         self.sec_com.sendall("REGISTER".encode())
 
-    def register_image(self, user, password, pub_key):
+    def register_image(self, img_name, role_name, user, password, pub_key):
 
         self.sec_com.sendall("REGISTER_IMG".encode())
+        print(self.sec_com.recv().decode())
+        self.sec_com.sendall(img_name.encode())
+        print(self.sec_com.recv().decode())
+        self.sec_com.sendall(role_name.encode())
         print(self.sec_com.recv().decode())
         self.sec_com.sendall(user.encode())
         print(self.sec_com.recv().decode())
         # print('sent' + user)
         # self.sec_com.recv(1024)
         self.sec_com.sendall(password.encode())
-        print('sent' + password)
+        print('sent' + "password")
         print(self.sec_com.recv().decode())
         # pub_key = base64.urlsafe_b64encode(pub_key)
         self.sec_com.sendall(pub_key)
-        print('sent ' + str(pub_key))
-        print(self.sec_com.recv().decode())
+        print('sent key')
+        result = self.sec_com.recv().decode()
+        if result == "OK4":
+            return True
+        else:
+            return False
         print(self.sec_com.recv().decode())
 
     def close(self):

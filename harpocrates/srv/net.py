@@ -96,6 +96,10 @@ class TCPHandler(socketserver.BaseRequestHandler):
     def register_img(self):
         # try:
             self.sec_com.sendall(b'OK1')
+            img_name = self.sec_com.recv().decode()
+            self.sec_com.sendall(b'OK1')
+            role_name = self.sec_com.recv().decode()
+            self.sec_com.sendall(b'OK1')
             username = self.sec_com.recv().decode()
             # print(username)
             self.sec_com.sendall(b'OK2')
@@ -109,7 +113,7 @@ class TCPHandler(socketserver.BaseRequestHandler):
             # return
 
             # user = User.load(username, self.server.main.store)
-            r = self.server.cmd.register_img(username, password, pub_key)
+            r = self.server.cmd.register_img(img_name, role_name, username, password, pub_key)
             print(r)
             if r is not False:
                 self.sec_com.sendall(b'OK4')

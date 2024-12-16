@@ -1,6 +1,7 @@
 '''
 cmd.py
 '''
+from cryptography.fernet import InvalidToken
 from srv.store import Store
 from srv.user import User
 from enc import KeyKeeper
@@ -14,15 +15,21 @@ class Cmd(object):
         self.counter = 0
         self.keeper = keeper
 
-    def register_img(self, username, password, image_name):
-       # try:
+    def register_img(self, img_name, role_name,  username, password, pub_key):
+        try:
             user = User.load(username, self.store)
-            r = self.keeper.check_pass(password, user.salt, user.enc_key)
+            self.keeper.check_pass(password, user.salt, user.enc_key)
             print("user")
             # print(user.salt)
-            print(r)
+            # print(r)
             print(user.enc_key)
-            return r
-       # except Exception as e:
-            #print(repr(e))
+        except InvalidToken as e:
+            # print(repr(e))
+            print("password invalid")
             return False
+        self._save_img(img_name, role_name, pub_key)
+        return True
+
+    def _save_img(self, img_name, role_name, pub_key):
+        print("image registered")
+        pass

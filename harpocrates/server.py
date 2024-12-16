@@ -11,37 +11,50 @@ import threading
 
 
 class Main():
-
+    HOST, PORT = "localhost", 9999
+    
     def __init__(self,):
-        HOST, PORT = "localhost", 9999
+        
         self.store = Store()
-        password = input("password:")
+        #password = input("password:")
+
+    def unlock(self, username, password):
         try:
-            user = User.load("testadmin", self.store)
-            print(user)
+            user = User.load(username, self.store)
+            # print(user)
             key = enc.KeyKeeper.decrypt_system_key(password, user.salt, user.enc_key)
             self.keeper = enc.KeyKeeper(self.store, key)
         except InvalidToken:
             print("Password Incorrect!")
-            return
+            return False
         except TypeError:
             key = enc.KeyKeeper._generate_primary_key()
             self.keeper = enc.KeyKeeper(self.store, key)
             salt, enc_key = self.keeper.update_user_pass(password)
             user = User.new('testadmin', salt, enc_key, 'admin', self.store)
         
-        print("system key:")
-        print(key)
+        # print("system key:")
+        # print(key)
         
-        user.salt, user.enc_key = self.keeper.update_user_pass('password')
-        user.save()
+        # user.salt, user.enc_key = self.keeper.update_user_pass('password')
+        # user.save()
         # self.keeper.first_run_key()
         self.cmd = Cmd(self.keeper, self.store)
         # self.cmd.keeper.first_run_key()
-        self.net_srv = ThreadServer((HOST, PORT), self.cmd)
+        self.net_srv = ThreadServer((Main.HOST, Main.PORT), self.cmd)
         self.counter = 0
 
+        return True
+
     def test_run(self):
+        unlocked = False
+        
+        while unlocked is False:
+            # user = input("Username:")
+            user = "testadmin"
+            # password = input("Password:")
+            password = "password"
+            unlocked = self.unlock(user, password)
         
         ip, port = self.net_srv.server_address
         server_thread = threading.Thread(target=self.net_srv.serve_forever)
