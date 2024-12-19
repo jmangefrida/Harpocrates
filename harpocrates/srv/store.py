@@ -44,20 +44,21 @@ class Store(object):
         self.cur.execute("""CREATE TABLE IF NOT EXISTS client(
                          name VARCHAR(64) PRIMARY KEY,
                          ip_address VARCHAR(64),
-                         role VARCHAR(64),
+                         image_name VARCHAR(64),
                          public_key VARCHAR(2048),
-                         FOREIGN KEY (role) REFERENCES role (name))""")
+                         FOREIGN KEY (image_name) REFERENCES image (name))""")
         self.cur.execute("""CREATE TABLE IF NOT EXISTS role_grant(
                          id INTEGER PRIMARY KEY AUTOINCREMENT,
                          role_name VARCHAR(64),
                          secret_name VARCHAR(32),
                          FOREIGN KEY (role_name) REFERENCES role (name),
                          FOREIGN KEY (secret_name) REFERENCES secret (name))""")
-        self.cur.execute("""CREATE TABLE IF NOT EXISTS registered_image(
-                         image_name VARCHAR(64) PRIMARY KEY,
+        self.cur.execute("""CREATE TABLE IF NOT EXISTS image(
+                         name VARCHAR(64) PRIMARY KEY,
                          date_registered TIMESTAMP,
                          registered_by VARCHAR(32),
                          role VARCHAR(64),
+                         public_key VARCHAR(2048),
                          FOREIGN KEY (role) REFERENCES role (name))""")
         con.commit()
 
@@ -81,8 +82,8 @@ class Store(object):
         self.cur.execute(query, values)
         #self.cur.execute('commit')
         self.con.commit()
-        r = self.cur.execute("select * from user", ()).fetchone()
-        print(r)
+        # r = self.cur.execute("select * from user", ()).fetchone()
+        # print(r)
         return True
 
     def find(self, table, fields, filters):
@@ -131,6 +132,7 @@ class Store(object):
         marks, filters = Store.encode_filters(filters)
         query = "DELETE FROM {} WHERE {}".format(table, marks)
         self.cur.execute(query, filters)
+        self.con.commit()
         return True
 
     @staticmethod

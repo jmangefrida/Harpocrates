@@ -45,9 +45,6 @@ class NetClient():
     def authenticate(self,):
         self.sec_com.sendall("AUTHENTICATE".encode())
 
-    def register_client(self):
-        self.sec_com.sendall("REGISTER".encode())
-
     def register_image(self, img_name, role_name, user, password, pub_key):
 
         self.sec_com.sendall("REGISTER_IMG".encode())
@@ -72,6 +69,48 @@ class NetClient():
         else:
             return False
         print(self.sec_com.recv().decode())
+
+    def register_client(self, client_name, img_name, img_private_key, pub_key):
+
+        self.sec_com.sendall("REGISTER_CLIENT".encode())
+        print(self.sec_com.recv().decode())
+        self.sec_com.sendall(client_name.encode())
+        # print(self.sec_com.recv().decode())
+        self.sec_com.sendall(img_name.encode())
+        token = self.sec_com.recv()
+        data = KeyKeeper.decrypt_with_client_key(token, img_private_key)
+        self.sec_com.sendall(data)
+        result = self.sec_com.recv().decode()
+        if result == "OK":
+            self.sec_com.sendall(pub_key)
+        else:
+            return False
+        result = self.sec_com.recv().decode()
+        if result == "OK":
+            return True
+        else:
+            print(result)
+            return False
+
+    def request_secret(self, client_name, secret_name, private_key):
+        self.sec_com.sendall("REQUEST_SECRET".encode())
+        print(self.sec_com.recv().decode())
+        self.sec_com.sendall(client_name.encode())
+        token = self.sec_com.recv()
+        data = KeyKeeper.decrypt_with_client_key(token, private_key)
+        self.sec_com.sendall(data)
+        result = self.sec_com.recv().decode()
+        print(result)
+        if result == "OK":
+            self.sec_com.sendall(secret_name.encode())
+            account_name = self.sec_com.recv().decode()
+            print(account_name)
+            account_secret = self.sec_com.recv()
+            print(account_secret)
+            return account_name, account_secret
+
+        else:
+            return False
 
     def close(self):
         self.sec_com.sendall(b'')

@@ -194,7 +194,8 @@ class KeyKeeper(object):
 
     @staticmethod
     def encrypt_with_client_key(data, client_pem):
-        public_key = serialization.load_pem_public_key(client_pem, None)
+        print(data)
+        public_key = serialization.load_pem_public_key(client_pem.encode(), None)
         cipher_text = public_key.encrypt(
             data,
             padding.OAEP(
@@ -204,7 +205,31 @@ class KeyKeeper(object):
                 )
             )
 
+        print(cipher_text)
         return cipher_text
+
+    @staticmethod
+    def decrypt_with_client_key(cipher, client_pem):
+        # print("cipher")
+        # print(cipher)
+        # print('pem')
+        # print(client_pem)
+        private_key = serialization.load_pem_private_key(client_pem, None)
+        data = private_key.decrypt(
+            cipher,
+            padding.OAEP(
+                mgf=padding.MGF1(algorithm=hashes.SHA256()),
+                algorithm=hashes.SHA256(),
+                label=None
+                )
+            )
+
+        print(data)
+        return data
+
+    @staticmethod
+    def get_random():
+        return os.urandom(32)
 
 
 class SecureComm(object):
@@ -254,7 +279,8 @@ class SecureComm(object):
     def sendall(self, data):
         data = self.encrypt(data)
         length = len(data)
-        length = length.to_bytes(4, "little")
+        print(length)
+        length = length.to_bytes(8, "big")
         # data = base64.urlsafe_b64encode(data)
         # print(len(data))
         self.sock.sendall(length+data)
@@ -263,8 +289,9 @@ class SecureComm(object):
         return self.f.decrypt(data)
 
     def recv(self):
-        length = self.sock.recv(4)
+        length = self.sock.recv(8)
         length = int.from_bytes(length)
+        print(length)
         data = self.sock.recv(length)
         # print(len(data))
         # data = base64.urlsafe_b64decode(data)

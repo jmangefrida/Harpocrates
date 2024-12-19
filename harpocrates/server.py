@@ -2,6 +2,7 @@ import sqlite3
 
 from cryptography.exceptions import InvalidSignature
 from cryptography.fernet import InvalidToken
+from srv.auth import Secret
 from srv.net import ThreadServer
 from srv.user import User
 from srv.store import Store
@@ -55,7 +56,9 @@ class Main():
             # password = input("Password:")
             password = "password"
             unlocked = self.unlock(user, password)
-        
+        # self.cmd.create_secret('test_secret', 'user', 'password', 'This is a test account')
+        # self.cmd.grant('testrole', 'test_secret')
+
         ip, port = self.net_srv.server_address
         server_thread = threading.Thread(target=self.net_srv.serve_forever)
         server_thread.daemon = False

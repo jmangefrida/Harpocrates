@@ -53,15 +53,22 @@ class TCPHandler(socketserver.BaseRequestHandler):
             # print(msg)
             # self.data = self.sec_com.decrypt(msg)
             # print("{} wrote:".format(self.client_address[0]))
-            print(msg.decode())
-            if msg.decode() == "REGISTER_IMG":
+            msg = msg.decode()
+            print(msg)
+            if msg == "REGISTER_IMG":
                 self.register_img()
+                return
+            elif msg == "REGISTER_CLIENT":
+                self. register_client()
+                return
+            elif msg == "REQUEST_SECRET":
+                self.request_secret()
                 return
             # Likewise, self.wfile is a file-like object used to write back
             # to the client
             # self.wfile.write(self.sec_com.encrypt(self.data.upper()))
             # self.request.sendall(self.sec_com.encrypt(self.data.upper()))
-            self.sec_com.sendall(msg.upper())
+            self.sec_com.sendall(msg.upper().encode())
 
 
     def hand_shake(self):
@@ -121,6 +128,49 @@ class TCPHandler(socketserver.BaseRequestHandler):
                 self.sec_com.sendall(b'FAIL')
 
             # pub_key = self.sec_com.recv(2048).decode()
+
+    def register_client(self):
+        self.sec_com.sendall(b'OK1')
+        client_name = self.sec_com.recv().decode()
+        img_name = self.sec_com.recv().decode()
+        cipher, img = self.server.cmd.auth_img(img_name)
+        self.sec_com.sendall(cipher)
+        data = self.sec_com.recv()
+        if data == img.data:
+            self.sec_com.sendall(b'OK')
+            pub_key = self.sec_com.recv().decode()
+            r = self.server.cmd.register_client(client_name, self.client_address[0], img_name, pub_key)
+            if r is True:
+                self.sec_com.sendall(b'OK')
+            else:
+                self.sec_com.sendall(b'FAIL_REGISTER')
+        else:
+            self.sec_com.sendall(b'FAIL_DECRYPT')
+
+    def request_secret(self):
+        self.sec_com.sendall(b'OK1')
+        client_name = self.sec_com.recv().decode()
+        cipher, client = self.server.cmd.auth_client(client_name)
+        self.sec_com.sendall(cipher)
+        data = self.sec_com.recv()
+        if data == client.data:
+            self.sec_com.sendall(b'OK')
+            secret_name = self.sec_com.recv().decode()
+            secret = self.server.cmd.request_secret(secret_name, client)
+            print('sending secret: ' + secret.account_name)
+            self.sec_com.sendall(secret.account_name.encode())
+            print(secret.prepared_secret)
+            print(len(secret.prepared_secret))
+            self.sec_com.sendall(secret.prepared_secret)
+            print("success")
+        else:
+            self.sec_com.sendall(b'FAIL')
+
+
+
+
+
+
 
 
 class ThreadServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
