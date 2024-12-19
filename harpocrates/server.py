@@ -2,7 +2,7 @@ import sqlite3
 
 from cryptography.exceptions import InvalidSignature
 from cryptography.fernet import InvalidToken
-from srv.auth import Secret
+# from srv.auth import Secret
 from srv.net import ThreadServer
 from srv.user import User
 from srv.store import Store
