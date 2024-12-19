@@ -4,7 +4,6 @@ enc.py
 import base64
 import os
 import secrets
-import threading
 from cryptography.fernet import Fernet, MultiFernet
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
@@ -30,7 +29,6 @@ class KeyKeeper(object):
     def _load_primary_key(self, user):
         # key = self.store.read('setting', ['enc_key'], {1: 1})[0]
         pass
-
 
     def enable_fips(self):
         """
@@ -100,15 +98,6 @@ class KeyKeeper(object):
         # f = MultiFernet([self._new_key, self._key])
         f = Fernet(self._key)
         plain_text = f.decrypt(secret)
-        # public_key = serialization.load_pem_public_key(client_pem, None)
-        # cipher_text = public_key.encrypt(
-        #     plain_text,
-        #     padding.OAEP(
-        #         mgf=padding.MGF1(algorithm=hashes.SHA256()),
-        #         algorithm=hashes.SHA256(),
-        #         label=None
-        #     )
-        # )
 
         cipher_text = KeyKeeper.encrypt_with_client_key(plain_text, client_pem)
         
@@ -117,16 +106,7 @@ class KeyKeeper(object):
     def check_pass(self, password, salt, enc_key):
         key = KeyKeeper.hash_pass(password, salt)
         f = Fernet(key)
-        # print("system key:")
-        # print(self._key)
-        # print("hash key:")
-        # print(key)
-        # check_key = f.encrypt(self._key)
-        # print(check_key)
-        # time.sleep(2)
-        # check_key = f.encrypt(self._key)
-        # print(check_key)
-        # print(enc_key)
+
         dec_key = f.decrypt(enc_key)
         print(dec_key)
         print(self._key)
@@ -154,9 +134,7 @@ class KeyKeeper(object):
 
     @staticmethod
     def hash_pass(password, salt):
-        # print("pass is:" + password)
-        # print("salt is: ")
-        # print(salt)
+
         kdf = PBKDF2HMAC(
             algorithm=hashes.SHA256(),
             length=32,
@@ -165,8 +143,6 @@ class KeyKeeper(object):
 
         token = kdf.derive(bytes(password, 'UTF-8'))
         key = base64.urlsafe_b64encode(token)
-        # print("key is:" + key.decode())
-
 
         return key
 
@@ -186,9 +162,6 @@ class KeyKeeper(object):
         public_pem = public_key.public_bytes(
             encoding=serialization.Encoding.PEM,
             format=serialization.PublicFormat.SubjectPublicKeyInfo)
-        # public_bytes = public_key.public_bytes(
-        #    encoding=serialization.Encoding.Raw,
-        #    format=serialization.PublicFormat.Raw)
 
         return private_pem, public_pem
 
@@ -210,10 +183,7 @@ class KeyKeeper(object):
 
     @staticmethod
     def decrypt_with_client_key(cipher, client_pem):
-        # print("cipher")
-        # print(cipher)
-        # print('pem')
-        # print(client_pem)
+
         private_key = serialization.load_pem_private_key(client_pem, None)
         data = private_key.decrypt(
             cipher,
@@ -279,7 +249,6 @@ class SecureComm(object):
     def sendall(self, data):
         data = self.encrypt(data)
         length = len(data)
-        print(length)
         length = length.to_bytes(8, "big")
         # data = base64.urlsafe_b64encode(data)
         # print(len(data))
@@ -291,7 +260,6 @@ class SecureComm(object):
     def recv(self):
         length = self.sock.recv(8)
         length = int.from_bytes(length)
-        print(length)
         data = self.sock.recv(length)
         # print(len(data))
         # data = base64.urlsafe_b64decode(data)

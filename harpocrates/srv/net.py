@@ -2,15 +2,9 @@
 net.py
 '''
 
-import re
-import socket
 import threading
 import socketserver
-import base64
-# from socketserver import _RequestType, _RetAddress, BaseServer
 from enc import SecureComm
-from srv.user import User
-from cmd import Cmd
 
 
 class TCPHandler(socketserver.BaseRequestHandler):
@@ -21,11 +15,6 @@ class TCPHandler(socketserver.BaseRequestHandler):
     override the handle() method to implement communication to the
     client.
     """
-    #def __init__(self, *args) -> None:
-    #    self.keeper = args[-1]
-    #    print(self.keeper)
-    #    print(args)
-    #    super(TCPHandler).__init__(*args)
 
     def handle(self):
         self.request.settimeout(10)
@@ -101,33 +90,23 @@ class TCPHandler(socketserver.BaseRequestHandler):
         pass
 
     def register_img(self):
-        # try:
-            self.sec_com.sendall(b'OK1')
-            img_name = self.sec_com.recv().decode()
-            self.sec_com.sendall(b'OK1')
-            role_name = self.sec_com.recv().decode()
-            self.sec_com.sendall(b'OK1')
-            username = self.sec_com.recv().decode()
-            # print(username)
-            self.sec_com.sendall(b'OK2')
-            password = self.sec_com.recv().decode()
-            # print(password)
-            self.sec_com.sendall(b'OK3')
-            pub_key = self.sec_com.recv().decode()
-            # print(pub_key)
-        # except:
-            # print("error")
-            # return
-
-            # user = User.load(username, self.server.main.store)
-            r = self.server.cmd.register_img(img_name, role_name, username, password, pub_key)
-            print(r)
-            if r is not False:
-                self.sec_com.sendall(b'OK4')
-            else:
-                self.sec_com.sendall(b'FAIL')
-
-            # pub_key = self.sec_com.recv(2048).decode()
+        self.sec_com.sendall(b'OK1')
+        img_name = self.sec_com.recv().decode()
+        self.sec_com.sendall(b'OK1')
+        role_name = self.sec_com.recv().decode()
+        self.sec_com.sendall(b'OK1')
+        username = self.sec_com.recv().decode()
+        # print(username)
+        self.sec_com.sendall(b'OK2')
+        password = self.sec_com.recv().decode()
+        # print(password)
+        self.sec_com.sendall(b'OK3')
+        pub_key = self.sec_com.recv().decode()
+        r = self.server.cmd.register_img(img_name, role_name, username, password, pub_key)
+        if r is not False:
+            self.sec_com.sendall(b'OK4')
+        else:
+            self.sec_com.sendall(b'FAIL')
 
     def register_client(self):
         self.sec_com.sendall(b'OK1')
@@ -165,12 +144,6 @@ class TCPHandler(socketserver.BaseRequestHandler):
             print("success")
         else:
             self.sec_com.sendall(b'FAIL')
-
-
-
-
-
-
 
 
 class ThreadServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
