@@ -10,8 +10,8 @@ from functools import wraps
 import os
 
 app = Flask(__name__)
-app.secret_key = b'hupufahue4h;asdnfuiasdhf'
-app.secret_key = os.urandom(64)
+#app.secret_key = b'hupufahue4h;asdnfuiasdhf'
+app.secret_key = os.urandom(128)
 # login_manager = LoginManager()
 # login_manager = LoginManager()
 # login_manager.login_view = 'auth.login'

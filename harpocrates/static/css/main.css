@@ -36,3 +36,7 @@ th {
 	height: 400px;
 	overflow-y: scroll;
 }
+
+.small-btn {
+	font-size: .75em;
+}
