@@ -36,7 +36,7 @@ def register_client(host, port):
 
     client = net.NetClient(host, port)
     client.connect()
-    result = client.register_client("testclient", "testimg", img_private_key, public_key)
+    result = client.register_client("testimg", img_private_key, public_key)
 
     if result is True:
         with open("priv_key.pem", 'w') as key_file:

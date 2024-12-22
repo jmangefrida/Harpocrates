@@ -70,7 +70,9 @@ class NetClient():
             return False
         print(self.sec_com.recv().decode())
 
-    def register_client(self, client_name, img_name, img_private_key, pub_key):
+    def register_client(self, img_name, img_private_key, pub_key):
+
+        client_name = socket.gethostname()
 
         self.sec_com.sendall("REGISTER_CLIENT".encode())
         print(self.sec_com.recv().decode())
