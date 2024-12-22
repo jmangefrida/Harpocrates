@@ -46,13 +46,15 @@ def login():
         else:
             error = "Invalid username/password"
 
-    return '''
-        <form method="post">
-            <p><input type=text name=username>
-            <p><input type=password name=password>
-            <p><input type=submit value=Login>
-        </form>
-    '''
+    return render_template("index.html", error=error)
+
+    # return '''
+    #     <form method="post">
+    #         <p><input type=text name=username>
+    #         <p><input type=password name=password>
+    #         <p><input type=submit value=Login>
+    #     </form>
+    # '''
 
 
 @login_required
@@ -73,6 +75,32 @@ def dashboard():
         elif action == 'stop':
             main.stop()
             msg = "Server stopped."
+        elif action == "new_secret":
+            main.cmd.create_secret(request.form['name'],
+                                   request.form['accountname'],
+                                   request.form['secret'], 
+                                   request.form['description'])
+        elif action == "new_role":
+            main.cmd.create_role(request.form['name'],
+                                 request.form['description'])
+        elif action == "new_image":
+            main.cmd.create_image(request.form['name'],
+                                  request.form['role'],
+                                  request.form['description'],
+                                  session['username'])
+        elif action == "new_admin":
+            main.cmd.create_user(request.form['name'],
+                                 request.form['password'])
+        elif action == "del_secret":
+            main.cmd.delete_secret(request.form['name'])
+        elif action == "del_role":
+            main.cmd.delete_role(request.form['name'])
+        elif action == "del_image":
+            main.cmd.delete_image(request.form['name'])
+        elif action == "del_client":
+            main.cmd.delete_client(request.form['name'])
+        elif action == "del_admin":
+            main.cmd.delete_user(request.form['name'])
     # return "server running"
     return render_template('dashboard.html', main=main, session=session, keeper=enc.KeyKeeper, msg=msg, err=err)
 

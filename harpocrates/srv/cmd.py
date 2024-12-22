@@ -66,6 +66,31 @@ class Cmd(object):
         account_secret = self.keeper.encrypt_secret(account_pass)
         secret = Secret.new(secret_name, account_name, account_secret, description, self.store)
 
+    def create_role(self, role_name, description):
+        role = Role.new(role_name, description, self.store)
+
+    def create_image(self, name, role_name, description, user):
+        image = Image.new(name, None, user, role_name, None, self.store)
+    
+    def create_user(self, name, password,  ):
+        salt, enc_key = self.keeper.update_user_pass(password)
+        user = User.new(name, salt, enc_key, 'admin', self.store)
+
+    def delete_secret(self, name):
+        Secret.delete(name, self.store)
+
+    def delete_role(self, name):
+        Role.delete(name, self.store)
+
+    def delete_image(self, name):
+        Image.delete(name, self.store)
+
+    def delete_client(self, name):
+        Client.delete(name, self.store)
+
+    def delete_user(self, name):
+        User.delete(name, self.store)
+
     def grant(self, role_name, secret_name):
         secret = Secret.load(secret_name, self.store)
         role = Role.load(role_name, self.store)
@@ -85,4 +110,8 @@ class Cmd(object):
 
     def list_roles(self):
         results = Role.find(None, self.store)
+        return results
+
+    def list_users(self):
+        results = User.find(None, self.store)
         return results

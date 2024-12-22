@@ -23,9 +23,10 @@ class Secret(object):
                            'description': self.description},
                           {'name': self.name})
 
-    def delete(self):
-        return self.store.delete('secret', {'name': self.name})
-        
+    @staticmethod
+    def delete(name, store):
+        return store.delete('secret', {'name': name})        
+
     @staticmethod
     def load(name, store):
         result = store.read('secret', ['name', 'account_name', 'secret', 'description'], {'name': name})
@@ -154,6 +155,7 @@ class Role(object):
 
     @staticmethod
     def delete(name, store):
+        store.delete('role_grant', {'role_name': name})
         store.delete('role', {'name': name})
 
     @staticmethod
@@ -199,6 +201,12 @@ class Image():
 
     @staticmethod
     def new(name, date_registered, registered_by, role, public_key, store):
+
+        if date_registered is None:
+            date_registered = 'now()'
+        if public_key is None:
+            public_key = ''
+
         store.create('image',
                      {'name': name,
                       'date_registered': date_registered,
