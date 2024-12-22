@@ -1,0 +1,38 @@
+nav {
+	background-color: lightgrey;
+}
+
+@keyframes cssHide {
+	to {
+		opacity: 0;
+	}
+}
+
+.msg {
+	height: 50px;
+	margin: 15px;
+	opacity: 100;
+	animation-name: cssHide;
+	animation-delay: 4s;
+	animation-duration: 3s;
+	animation-fill-mode: forwards;
+}
+
+#settings {
+	height: 100%;
+}
+
+
+td {
+	padding: 0px;
+
+}
+
+th {
+	padding: 0px;
+}
+
+.entity_list {
+	height: 400px;
+	overflow-y: scroll;
+}

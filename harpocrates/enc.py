@@ -30,16 +30,6 @@ class KeyKeeper(object):
         # key = self.store.read('setting', ['enc_key'], {1: 1})[0]
         pass
 
-    def enable_fips(self):
-        """
-        This relies on the installed version of openssl being fips complient
-        """
-        try:
-            backend._enable_fips()
-            return True
-        except InternalError:
-            return False
-
     def first_run_key(self):
         """
         Should only be run for the first setup
@@ -117,6 +107,17 @@ class KeyKeeper(object):
             return True
         else:
             print("NOT MATCH")
+            return False
+    
+    @staticmethod
+    def enable_fips():
+        """
+        This relies on the installed version of openssl being fips complient
+        """
+        try:
+            backend._enable_fips()
+            return True
+        except InternalError:
             return False
 
     @staticmethod

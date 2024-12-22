@@ -1,6 +1,7 @@
 '''
 cmd.py
 '''
+import secrets
 from cryptography.fernet import InvalidToken
 from srv.store import Store
 from srv.user import User
@@ -70,4 +71,18 @@ class Cmd(object):
         role = Role.load(role_name, self.store)
         role.grant(secret.name)
 
+    def list_secrets(self):
+        secrets = Secret.find(None, self.store)
+        return secrets
 
+    def list_clients(self):
+        results = Client.find(None, self.store)
+        return results
+
+    def list_images(self):
+        results = Image.find(None, self.store)
+        return results
+
+    def list_roles(self):
+        results = Role.find(None, self.store)
+        return results

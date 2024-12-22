@@ -50,6 +50,13 @@ class Secret(object):
         except:
             return None
 
+    @staticmethod
+    def find(filters, store):
+        if filters is None:
+            filters = {}
+        results = store.find('secret', ['name', 'description'], filters)
+        return results
+
 
 class Client(object):
     """docstring for Client"""
@@ -92,6 +99,13 @@ class Client(object):
     @staticmethod
     def delete(name, store):
         store.delete('client', {'name': name})
+
+    @staticmethod
+    def find(filters, store):
+        if filters is None:
+            filters = {}
+        results = store.find('client', ['name', 'image_name', 'ip_address'], filters)
+        return results
 
 
 class Role(object):
@@ -142,6 +156,13 @@ class Role(object):
     def delete(name, store):
         store.delete('role', {'name': name})
 
+    @staticmethod
+    def find(filters, store):
+        if filters is None:
+            filters = {}
+        results = store.find('role', ['name', 'description'], filters)
+        return results
+
 
 class Image():
     def __init__(self, name, date_registered, registerd_by, role, public_key, store) -> None:
@@ -189,3 +210,10 @@ class Image():
     @staticmethod
     def delete(name, store):
         store.delete('image', {'name': name})
+
+    @staticmethod
+    def find(filters, store):
+        if filters is None:
+            filters = {}
+        results = store.find('image', ['name', 'role', 'registered_by'], filters)
+        return results

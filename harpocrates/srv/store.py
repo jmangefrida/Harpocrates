@@ -88,10 +88,13 @@ class Store(object):
 
     def find(self, table, fields, filters):
         fields = ', '.join(fields)
-        marks, filters = Store.encode_filters(filters)
-        query = "SELECT {} from {} where {}".format(fields, table, marks)
-        result = self.cur.execute(query, filters).fetchall()
-        print(result)
+        # marks, filters = Store.encode_filters(filters)
+        # query = "SELECT {} from {} where {}".format(fields, table, marks)
+        # result = self.cur.execute(query, filters).fetchall()
+        # print(result)
+        query = "SELECT {} from {}".format(fields, table)
+        result = self.cur.execute(query, ()).fetchall()
+
         return result
 
     def read(self, table, fields, filters):
@@ -161,60 +164,3 @@ class Store(object):
         # print(encoded)
         # return marks, encoded
         return marks, values
-
-    def new_user(self, username, salt, password):
-        if self.value_exists('user', 'username', username):
-            raise Exception("User already exists")
-        # r = self.cur.execute("SELECT COUNT(username) FROM user WHERE username = ?", (username)).fetchall()
-        # if r[0][0] > 0:
-        #    raise Exception("User already exists")
-        self.cur.execute("INSERT INTO USER (username, salt, password) VALUES (?, ?, ?)", (username, salt, password))
-
-        return True
-
-    def update_user(self, username, salt, password):
-        self.cur.execute("UPDATE user SET salt = ?, password = ? WHERE username = ?", (salt, password, username))
-
-    def get_user(self, username):
-        pass
-
-    def delete_user(self, username):
-        self.cur.execute("DELETE FROM user WHERE username = ?", (username, ))
-
-    def new_secret(self, name, account_name, secret, description):
-        if self.value_exists('secret', 'name', name):
-            raise ItemExistsError
-            # raise Exception("secret already exists")
-        self.cur.execute("""INSERT INTO
-                         secret (name, account_name, secret, description) 
-                         values 
-                         (?, ?, ?, ?)""",
-                         (name, account_name, secret, description))
-        return True
-
-    def update_secret(self, name, account_name, secret, description):
-        pass
-
-    def get_secret(self, name):
-        pass
-
-    def delete_secret(self, name):
-        pass
-
-    def new_role(self, name, description):
-        pass
-
-    def update_role(self, name, description):
-        pass
-
-    def delete_role(self, name):
-        pass
-
-    def new_client(self, name, role, public_key):
-        pass
-
-    def update_client(self, name, role, public_key):
-        pass
-
-    def delete_client(self, name):
-        pass
