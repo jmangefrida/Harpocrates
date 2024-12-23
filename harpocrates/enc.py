@@ -67,7 +67,7 @@ class KeyKeeper(object):
 
         token = self._key
         salt = os.urandom(16)
-        user_key = KeyKeeper.hash_pass('password', salt)
+        user_key = KeyKeeper.hash_pass(password, salt)
         print("hash key:")
         print(user_key)
         f = Fernet(user_key)

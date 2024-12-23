@@ -32,6 +32,20 @@ def login_required(f):
 def logout():
     session.pop('username', None)
 
+
+@app.route("/first_run", methods=['POST', 'GET'])
+def first_run():
+    if main.check_for_first_run():
+        if request.method == 'POST':
+            if request.form['password'] == request.form['repassword']:
+                main.first_run(request.form['username'], request.form['password'])
+                return redirect(url_for('dashboard'))
+            else:
+                error = "Passwords do not match"
+                return render_template("first_run.html", error=error)
+        return render_template("first_run.html", error=None)
+
+
 @app.route("/", methods=['POST', 'GET'])
 def login():
     error = None
@@ -42,9 +56,11 @@ def login():
             session['username'] = request.form['username']
             # login_user('username')
             return redirect(url_for('dashboard'))
-
         else:
             error = "Invalid username/password"
+
+    if main.check_for_first_run():
+        return redirect(url_for('first_run'))
 
     return render_template("index.html", error=error)
 

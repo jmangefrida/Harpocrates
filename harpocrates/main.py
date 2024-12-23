@@ -22,20 +22,32 @@ class Main():
         self.status = "stopped"
         #password = input("password:")
 
+    def check_for_first_run(self):
+        result = self.store.find('user', ['username'], ())
+        if len(result) == 0:
+            return True
+        else:
+            return False
+
+    def first_run(self, username, password):
+        key = enc.KeyKeeper._generate_primary_key()
+        self.keeper = enc.KeyKeeper(self.store, key)
+        salt, enc_key = self.keeper.update_user_pass(password)
+        user = User.new(username, salt, enc_key, 'admin', self.store)
+        return user
+
     def unlock(self, username, password):
         try:
             user = User.load(username, self.store)
-            # print(user)
+            print(password)
             key = enc.KeyKeeper.decrypt_system_key(password, user.salt, user.enc_key)
             self.keeper = enc.KeyKeeper(self.store, key)
+            print(key)
         except InvalidToken:
             print("Password Incorrect!")
             return False
         except TypeError:
-            key = enc.KeyKeeper._generate_primary_key()
-            self.keeper = enc.KeyKeeper(self.store, key)
-            salt, enc_key = self.keeper.update_user_pass(password)
-            user = User.new('testadmin', salt, enc_key, 'admin', self.store)
+            return False
         
         # print("system key:")
         # print(key)

@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>Harpocrates</title>
+	<link rel="stylesheet" type="text/css" href="/static/css/chota.css">
+	<link rel="stylesheet" type="text/css" href="/static/css/main.css">
+	<link rel="stylesheet" type="text/css" href="/static/css/index.css">
+</head>
+<body id="top">
+	<div class="container">
+		<div class="hero is-full-screen">
+			<div class="logo is-center is-vertical-align">
+				<img src="/static/img/harp_logo.png" class="big-logo">
+				<h3>
+					Harpocrates
+				</h3>
+				<form method="post">
+             		<p><input type=text name=username placeholder="Username" autocomplete="off">
+    	           	<p><input type=password name=password placeholder="Password" autocomplete="off">
+    	           	<p><input type=password name=repassword placeholder="Retype Password" autocomplete="off">
+       	       		<p><input type=submit value=Activate>
+       	       		{% if error is not none %}<div class="card text-error">{{ error }}</div>{% endif %}
+                </form>
+				
+			</div>
+			
+		</div>
+		
+	</div>
+</body>
+</html>
