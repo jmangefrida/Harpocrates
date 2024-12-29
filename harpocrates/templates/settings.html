@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>Harpocrates</title>
+	<link rel="stylesheet" type="text/css" href="/static/css/chota.css">
+	<link rel="stylesheet" type="text/css" href="/static/css/main.css">
+</head>
+<body>
+<nav class="nav">
+  <div class="nav-left">
+    <a class="brand" href="#"><img src="/static/img/harp_logo.png"> Harpocrates</a>
+    <div class="tabs">
+      <a href="/dashboard" class="">Dashboard</a>
+      <a class="active">Settings</a>
+    </div>
+  <div class="nav-right">
+  	<details class="dropdown">
+  		<summary class="button outline">{{ session['username'] }}</summary>
+  		<div class="card">
+  			<p>
+  				<a href="/">Log Out</a>
+  			</p>
+  		</div>
+  	</details>
+  </div>
+</nav>
+<div id="top" class="container">
+<div class="row">
+	<div class="col-12 col-12-md col-12-lg">
+		<div class="msg">
+			{% if msg != "" %}<div class="card text-success">{{msg}}</div>{% endif %}
+			{% if err != "" %}<div class="card text-error">{{err}}</div>{% endif %}
+		</div>
+	</div>
+</div>
+<div class="row">
+	<div class="col-12 col-6-md col-6-lg">
+		<fieldset id="settings">
+			<legend>Settings</legend>
+			<form method="post">
+				<p>
+					<label for="restrict_ip"><input type="checkbox" name="restrict_ip" id="restrict_ip">Restrict clients to registered IP</label>
+					
+					<br>
+					<label for="restrict_ip"><input type="checkbox" name="restrict_ip" id="pre_register">Require pre-registration of images</label>
+					
+				</p>
+				<p class="pull-right">
+					<input type="submit" name="action" value="update" id="update">
+				</p>
+			</form>
+		</fieldset>
+		
+</div>
+</div>
+<!-- The Modal -->
+<div id="myModal" class="modal">
+
+  <!-- Modal content -->
+  <div class="modal-content">
+    <span class="modal-close">&times;</span>
+    <p></p>
+    <p class="modal-inner-content">Some text in the Modal..</p>
+  </div>
+<script type="text/javascript">
+	
+</script>
+<script src="/static/js/main.js"></script>
+</div>
+</body>
+</html>

@@ -10,7 +10,6 @@ from functools import wraps
 import os
 
 app = Flask(__name__)
-#app.secret_key = b'hupufahue4h;asdnfuiasdhf'
 app.secret_key = os.urandom(128)
 # login_manager = LoginManager()
 # login_manager = LoginManager()
@@ -64,14 +63,6 @@ def login():
 
     return render_template("index.html", error=error)
 
-    # return '''
-    #     <form method="post">
-    #         <p><input type=text name=username>
-    #         <p><input type=password name=password>
-    #         <p><input type=submit value=Login>
-    #     </form>
-    # '''
-
 
 @login_required
 @app.route("/dashboard/", methods=['POST', 'GET'])
@@ -121,6 +112,14 @@ def dashboard():
     return render_template('dashboard.html', main=main, session=session, keeper=enc.KeyKeeper, msg=msg, err=err)
 
 
+@login_required
+@app.route("/settings/")
+def settings():
+    msg = ""
+    err = ""
+    return render_template("settings.html", msg=msg, err=err)
+
+
 @app.route("/stop/")
 def stop():
     main.net_srv.shutdown()
@@ -129,9 +128,9 @@ def stop():
     # main.net_srv = None
     return "stopped"
 
+
 if __name__ == "__main__":
 
     # main = Main()
     app.run(debug=True)
     # main.test_run()
-
