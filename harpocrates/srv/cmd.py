@@ -12,8 +12,10 @@ from datetime import datetime
 
 class Cmd(object):
     """docstring for Cmd"""
-    def __init__(self, keeper, store):
-        self.store = store
+
+    def __init__(self, keeper, main):
+        self.main = main
+        self.store = main.store
         self.counter = 0
         self.keeper: KeyKeeper = keeper
 
@@ -21,6 +23,11 @@ class Cmd(object):
         try:
             user = User.load(username, self.store)
             self.keeper.check_pass(password, user.salt, user.enc_key)
+            
+            # If the pre_register setting is on, we need to make sure the image
+            # already exists
+            if self.main.settings['pre_register'] == 'on':
+                image = Image.load(img_name, self.store)
             role = Role.load(role_name, self.store)
             print("user")
             # print(user.salt)
@@ -45,8 +52,11 @@ class Cmd(object):
         cipher = KeyKeeper.encrypt_with_client_key(data, img.public_key)
         return cipher, img
 
-    def auth_client(self, client_name):
+    def auth_client(self, client_name, client_ip):
         client = Client.load(client_name, self.store)
+        # if restrict_ip is on, check to make sure the client is using the same IP
+        if client.ip_address != client_ip:
+            return None, None
         data = client.start_authenticate()
         cipher = KeyKeeper.encrypt_with_client_key(data, client.public_key)
         return cipher, client
@@ -115,3 +125,7 @@ class Cmd(object):
     def list_users(self):
         results = User.find(None, self.store)
         return results
+
+   
+        
+       

@@ -10,7 +10,7 @@
 <body>
 <nav class="nav">
   <div class="nav-left">
-    <a class="brand" href="#"><img src="/static/img/harp_logo.png"> Harpocrates</a>
+    <a class="brand" href="/dashboard"><img src="/static/img/harp_logo.png"> Harpocrates</a>
     <div class="tabs">
       <a href="/dashboard" class="">Dashboard</a>
       <a class="active">Settings</a>
@@ -41,10 +41,10 @@
 			<legend>Settings</legend>
 			<form method="post">
 				<p>
-					<label for="restrict_ip"><input type="checkbox" name="restrict_ip" id="restrict_ip">Restrict clients to registered IP</label>
+					<label for="restrict_ip"><input type="checkbox" name="restrict_ip" id="restrict_ip" {{ settings['restrict_ip'] }}>Restrict clients to registered IP</label>
 					
 					<br>
-					<label for="restrict_ip"><input type="checkbox" name="restrict_ip" id="pre_register">Require pre-registration of images</label>
+					<label for="pre_register"><input type="checkbox" name="pre_register" id="pre_register" {{ settings['pre_register'] }}>Require pre-registration of images</label>
 					
 				</p>
 				<p class="pull-right">

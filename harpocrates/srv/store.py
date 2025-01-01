@@ -32,7 +32,8 @@ class Store(object):
                          last_pass_change DATETIME,
                          account_type VARCHAR(32))""")
         self.cur.execute("""CREATE TABLE IF NOT EXISTS setting(
-                         enc_key VARCHAR(255))""")
+                         name VARCHAR(255) PRIMARY KEY,
+                         value VARCHAR(255))""")
         self.cur.execute("""CREATE TABLE IF NOT EXISTS secret(
                          name VARCHAR(32) PRIMARY KEY,
                          account_name VARCHAR(64),
@@ -100,10 +101,12 @@ class Store(object):
     def read(self, table, fields, filters):
         fields = ', '.join(fields)
         marks, filters = Store.encode_filters(filters)
-        query = "SELECT {} from {} where {}".format(fields, table, marks)
-        query = "SELECT * from {} where {}".format(table, marks)
-        # print(query)
-        # print(filters)
+        if len(filters) > 0:
+            query = "SELECT {} from {} where {}".format(fields, table, marks)
+        else:
+            query = "SELECT {} from {}".format(fields, table)
+        print(query)
+        print(filters)
         result = self.cur.execute(query, filters).fetchone()
         print('select')
         print(result)
@@ -121,13 +124,11 @@ class Store(object):
         enc_values = tuple(enc_values)
         print(enc_values)
         self.cur.execute(query, enc_values)
-        # self.cur.execute('update user set account_type = ? where username = ?', ('yello', 'testadmin'))
-        # self.cur.execute('commit')
         self.con.commit()
-        r = self.cur.execute('select * from user', ()).fetchall()
+        # r = self.cur.execute('select * from user', ()).fetchall()
         print("updated")
-        for row in r:
-            print(row)
+        # for row in r:
+        #     print(row)
         #self.con.close()
         return True
 
@@ -137,6 +138,10 @@ class Store(object):
         self.cur.execute(query, filters)
         self.con.commit()
         return True
+
+    def execute(self, query, filters):
+        # return self.cur.execute(query, filters).fetchall()
+        pass
 
     @staticmethod
     def encode_fields(fields):

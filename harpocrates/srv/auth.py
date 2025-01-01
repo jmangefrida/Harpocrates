@@ -189,7 +189,7 @@ class Image():
 
     @staticmethod
     def load(name, store):
-        result = store.read('image', ['name', 'date_registered', 'registerd_by', 'role', 'public_key'], {'name': name})
+        result = store.read('image', ['name', 'date_registered', 'registered_by', 'role', 'public_key'], {'name': name})
         if result is not None:
             print(result)
             result = list(result)

@@ -14,13 +14,33 @@ class Main():
     HOSTNAME = socket.gethostname()
     IP_ADDRESS = socket.gethostbyname(HOSTNAME)
     VERSION = "0.1"
+    SETTINGS = ['pre_register', 'restrict_ip']
 
     def __init__(self,):
         
         self.store = Store()
         self.net_srv = None
         self.status = "stopped"
+        self.settings = {}
+        self.load_settings()
         #password = input("password:")
+
+    def load_settings(self):
+        self.settings = {}
+        # result = self.store.execute('select name, value from setting', ())
+        result = self.store.find('setting', ['name', 'value'], {})
+        for row in result:
+            self.settings[row[0]] = row[1]
+        print(result)
+        pass
+
+    def update_settings(self, settings):
+        for setting in Main.SETTINGS:
+            if setting in settings:
+                self.store.update('setting', {'value': settings[setting]}, {'name': setting})
+            else:
+                self.store.update('setting', {'value': ''}, {'name': setting})
+        self.load_settings()
 
     def check_for_first_run(self):
         result = self.store.find('user', ['username'], ())
@@ -60,7 +80,7 @@ class Main():
         return True
 
     def start(self):
-        self.cmd = Cmd(self.keeper, self.store)
+        self.cmd = Cmd(self.keeper, self)
         # self.cmd.keeper.first_run_key()
         try:
             if self.status == 'stopped':
@@ -77,13 +97,17 @@ class Main():
             return False
 
     def stop(self):
-        self.net_srv.shutdown()
-        self.server_thread.join()
-
-        #self.net_srv = None
-        del self.server_thread
-        del self.net_srv
-        self.status = "stopped"
+        try:
+            self.net_srv.shutdown()
+            self.server_thread.join()
+    
+            # self.net_srv = None
+            del self.server_thread
+            del self.net_srv
+            self.status = "stopped"
+        except:
+            return [False, 'Service is not running']
+        return [True]
 
     def test_run(self):
         unlocked = False

@@ -32,6 +32,16 @@ def logout():
     session.pop('username', None)
 
 
+def prepare_settings():
+    settings = {}
+    for setting in Main.SETTINGS:
+        if setting not in main.settings:
+            settings[setting] = ""
+        elif main.settings[setting] == "on":
+            settings[setting] = "checked"
+    return settings
+
+
 @app.route("/first_run", methods=['POST', 'GET'])
 def first_run():
     if main.check_for_first_run():
@@ -43,6 +53,7 @@ def first_run():
                 error = "Passwords do not match"
                 return render_template("first_run.html", error=error)
         return render_template("first_run.html", error=None)
+    return render_template("first_run.html", error="Key Gen Error")
 
 
 @app.route("/", methods=['POST', 'GET'])
@@ -69,6 +80,7 @@ def login():
 def dashboard():
     msg = ""
     err = ""
+    name = ""
     if 'username' not in session:
         return redirect(url_for('login'))
 
@@ -80,44 +92,55 @@ def dashboard():
             else:
                 err = "Server start failed."
         elif action == 'stop':
-            main.stop()
-            msg = "Server stopped."
-        elif action == "new_secret":
-            main.cmd.create_secret(request.form['name'],
+            result = main.stop()
+            if result[0] is True:
+                msg = "Server stopped."
+            else:
+                err = result[1]
+        else:
+            name = request.form['name']
+        if action == "new_secret":
+            main.cmd.create_secret(name,
                                    request.form['accountname'],
                                    request.form['secret'], 
                                    request.form['description'])
         elif action == "new_role":
-            main.cmd.create_role(request.form['name'],
+            main.cmd.create_role(name,
                                  request.form['description'])
         elif action == "new_image":
-            main.cmd.create_image(request.form['name'],
+            main.cmd.create_image(name,
                                   request.form['role'],
                                   request.form['description'],
                                   session['username'])
         elif action == "new_admin":
-            main.cmd.create_user(request.form['name'],
+            main.cmd.create_user(name,
                                  request.form['password'])
         elif action == "del_secret":
-            main.cmd.delete_secret(request.form['name'])
+            main.cmd.delete_secret(name)
         elif action == "del_role":
-            main.cmd.delete_role(request.form['name'])
+            main.cmd.delete_role(name)
         elif action == "del_image":
-            main.cmd.delete_image(request.form['name'])
+            main.cmd.delete_image(name)
         elif action == "del_client":
-            main.cmd.delete_client(request.form['name'])
+            main.cmd.delete_client(name)
         elif action == "del_admin":
-            main.cmd.delete_user(request.form['name'])
+            main.cmd.delete_user(name)
     # return "server running"
     return render_template('dashboard.html', main=main, session=session, keeper=enc.KeyKeeper, msg=msg, err=err)
 
 
 @login_required
-@app.route("/settings/")
+@app.route("/settings/", methods=['POST', 'GET'])
 def settings():
     msg = ""
     err = ""
-    return render_template("settings.html", msg=msg, err=err)
+    if 'username' not in session:
+        return redirect(url_for('login'))
+    if request.method == 'POST':
+        settings = request.form.to_dict()
+        main.update_settings(settings)
+        msg = "Settings Updated"
+    return render_template("settings.html", msg=msg, err=err, settings=prepare_settings())
 
 
 @app.route("/stop/")
