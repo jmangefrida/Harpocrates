@@ -1,77 +1,159 @@
 import sqlite3
 
-from cryptography.exceptions import InvalidSignature
-from cryptography.fernet import InvalidToken
-from srv.auth import Secret
-from srv.net import ThreadServer
-from srv.user import User
-from srv.store import Store
-from srv.cmd import Cmd
+
+# from srv.auth import Secret
 import enc
-import threading
+from flask import Flask, request, session, redirect, url_for, render_template
+from flask_login import LoginManager, login_required, login_user, logout_user
+from main import Main
+from functools import wraps
+import os
+
+app = Flask(__name__)
+app.secret_key = os.urandom(128)
+# login_manager = LoginManager()
+# login_manager = LoginManager()
+# login_manager.login_view = 'auth.login'
+# login_manager.init_app(app)
+main = Main()
 
 
-class Main():
-    HOST, PORT = "localhost", 9999
-    
-    def __init__(self,):
-        
-        self.store = Store()
-        #password = input("password:")
+def login_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        print("check")
+        if 'username' not in session:
+            return redirect(url_for("/"))
+        return f(*args, **kwargs)
+    return decorated_function
 
-    def unlock(self, username, password):
-        try:
-            user = User.load(username, self.store)
-            # print(user)
-            key = enc.KeyKeeper.decrypt_system_key(password, user.salt, user.enc_key)
-            self.keeper = enc.KeyKeeper(self.store, key)
-        except InvalidToken:
-            print("Password Incorrect!")
-            return False
-        except TypeError:
-            key = enc.KeyKeeper._generate_primary_key()
-            self.keeper = enc.KeyKeeper(self.store, key)
-            salt, enc_key = self.keeper.update_user_pass(password)
-            user = User.new('testadmin', salt, enc_key, 'admin', self.store)
-        
-        # print("system key:")
-        # print(key)
-        
-        # user.salt, user.enc_key = self.keeper.update_user_pass('password')
-        # user.save()
-        # self.keeper.first_run_key()
-        self.cmd = Cmd(self.keeper, self.store)
-        # self.cmd.keeper.first_run_key()
-        self.net_srv = ThreadServer((Main.HOST, Main.PORT), self.cmd)
-        self.counter = 0
 
-        return True
+def logout():
+    session.pop('username', None)
 
-    def test_run(self):
-        unlocked = False
-        
-        while unlocked is False:
-            # user = input("Username:")
-            user = "testadmin"
-            # password = input("Password:")
-            password = "password"
-            unlocked = self.unlock(user, password)
-        # self.cmd.create_secret('test_secret', 'user', 'password', 'This is a test account')
-        # self.cmd.grant('testrole', 'test_secret')
 
-        ip, port = self.net_srv.server_address
-        server_thread = threading.Thread(target=self.net_srv.serve_forever)
-        server_thread.daemon = False
-        server_thread.start()
-        # Activate the server; this will keep running until you
-        # interrupt the program with Ctrl-C
-        print("server running")
-        input("")
-        print("shuting down")
-        self.net_srv.shutdown()
+def prepare_settings():
+    settings = {}
+    for setting in Main.SETTINGS:
+        if setting not in main.settings:
+            settings[setting] = ""
+        elif main.settings[setting] == "on":
+            settings[setting] = "checked"
+    return settings
+
+
+@app.route("/first_run", methods=['POST', 'GET'])
+def first_run():
+    if main.check_for_first_run():
+        if request.method == 'POST':
+            if request.form['password'] == request.form['repassword']:
+                main.first_run(request.form['username'], request.form['password'])
+                return redirect(url_for('dashboard'))
+            else:
+                error = "Passwords do not match"
+                return render_template("first_run.html", error=error)
+        return render_template("first_run.html", error=None)
+    return render_template("first_run.html", error="Key Gen Error")
+
+
+@app.route("/", methods=['POST', 'GET'])
+def login():
+    error = None
+    # logout_user()
+    logout()
+    if request.method == 'POST':
+        if main.unlock(request.form['username'], request.form['password']):
+            session['username'] = request.form['username']
+            # login_user('username')
+            return redirect(url_for('dashboard'))
+        else:
+            error = "Invalid username/password"
+
+    if main.check_for_first_run():
+        return redirect(url_for('first_run'))
+
+    return render_template("index.html", error=error)
+
+
+@login_required
+@app.route("/dashboard/", methods=['POST', 'GET'])
+def dashboard():
+    msg = ""
+    err = ""
+    name = ""
+    if 'username' not in session:
+        return redirect(url_for('login'))
+
+    if request.method == 'POST':
+        action = request.form['action']
+        if action == 'start':
+            if main.start():
+                msg = "Server started."
+            else:
+                err = "Server start failed."
+        elif action == 'stop':
+            result = main.stop()
+            if result[0] is True:
+                msg = "Server stopped."
+            else:
+                err = result[1]
+        else:
+            name = request.form['name']
+        if action == "new_secret":
+            main.cmd.create_secret(name,
+                                   request.form['accountname'],
+                                   request.form['secret'], 
+                                   request.form['description'])
+        elif action == "new_role":
+            main.cmd.create_role(name,
+                                 request.form['description'])
+        elif action == "new_image":
+            main.cmd.create_image(name,
+                                  request.form['role'],
+                                  request.form['description'],
+                                  session['username'])
+        elif action == "new_admin":
+            main.cmd.create_user(name,
+                                 request.form['password'])
+        elif action == "del_secret":
+            main.cmd.delete_secret(name)
+        elif action == "del_role":
+            main.cmd.delete_role(name)
+        elif action == "del_image":
+            main.cmd.delete_image(name)
+        elif action == "del_client":
+            main.cmd.delete_client(name)
+        elif action == "del_admin":
+            main.cmd.delete_user(name)
+    # return "server running"
+    return render_template('dashboard.html', main=main, session=session, keeper=enc.KeyKeeper, msg=msg, err=err)
+
+
+@login_required
+@app.route("/settings/", methods=['POST', 'GET'])
+def settings():
+    msg = ""
+    err = ""
+    if 'username' not in session:
+        return redirect(url_for('login'))
+    if request.method == 'POST':
+        settings = request.form.to_dict()
+        main.update_settings(settings)
+        msg = "Settings Updated"
+    return render_template("settings.html", msg=msg, err=err, settings=prepare_settings())
+
+
+@app.route("/stop/")
+def stop():
+    main.net_srv.shutdown()
+    main.server_thread.join()
+    # main.net_srv.server_close()
+    # main.net_srv = None
+    return "stopped"
 
 
 if __name__ == "__main__":
 
-    main = Main()
-    main.test_run()
+    # main = Main()
+    app.run(debug=True)
+    # main.test_run()

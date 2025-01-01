@@ -129,7 +129,10 @@ class TCPHandler(socketserver.BaseRequestHandler):
     def request_secret(self):
         self.sec_com.sendall(b'OK1')
         client_name = self.sec_com.recv().decode()
-        cipher, client = self.server.cmd.auth_client(client_name)
+        cipher, client = self.server.cmd.auth_client(client_name, self.client_address[0])
+        if client is None:
+            self.sec_com.sendall(b'FAIL')
+            return
         self.sec_com.sendall(cipher)
         data = self.sec_com.recv()
         if data == client.data:

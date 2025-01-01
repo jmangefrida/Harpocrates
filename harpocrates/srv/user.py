@@ -62,9 +62,6 @@ class User():
 
     @staticmethod
     def new(username, salt, enc_key, account_type, store):
-        if len(store.find('user', ['username'], {'username': username})) > 0:
-            raise Exception("user already exists")
-
         now = datetime.now()
         print('creating')
         print(enc_key)
@@ -82,3 +79,10 @@ class User():
     @staticmethod
     def delete(username, store):
         store.delete('user', {'username': username})
+
+    @staticmethod
+    def find(filters, store):
+        if filters is None:
+            filters = {}
+        results = store.find('user', ['username', 'account_type'], filters)
+        return results
