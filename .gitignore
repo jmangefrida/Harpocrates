@@ -126,3 +126,5 @@ dmypy.json
 harpocrates/store.db
 
 *.pem
+
+*.db

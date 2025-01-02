@@ -34,7 +34,7 @@ def logout():
 
 def prepare_settings():
     settings = {}
-    for setting in Main.SETTINGS:
+    for setting in main.store.SETTINGS:
         if setting not in main.settings:
             settings[setting] = ""
         elif main.settings[setting] == "on":

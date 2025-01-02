@@ -12,17 +12,19 @@ class ItemExistsError(Exception):
 
 class Store(object):
     """docstring for Store"""
+    SETTINGS = ['pre_register', 'restrict_ip', 'external_log']
     
     def __init__(self):
         super(Store, self).__init__()
         self.con = sqlite3.connect("store.db", check_same_thread=False)
         self.cur = self.con.cursor()
         self.build_schema()
+        self.popluate_initial_values()
         # print(self.cur.execute("select username from user where username = 'testadmin'", ()).fetchall())
 
     def build_schema(self):
-        con = sqlite3.connect("store.db", check_same_thread=False)
-        cur = self.con.cursor()
+        # con = sqlite3.connect("store.db", check_same_thread=False)
+        # cur = self.con.cursor()
         
         self.cur.execute("""CREATE TABLE IF NOT EXISTS user(
                          username VARCHAR(32) PRIMARY KEY,
@@ -61,7 +63,12 @@ class Store(object):
                          role VARCHAR(64),
                          public_key VARCHAR(2048),
                          FOREIGN KEY (role) REFERENCES role (name))""")
-        con.commit()
+        self.con.commit()
+
+    def popluate_initial_values(self):
+        for setting in Store.SETTINGS:
+            self.cur.execute('INSERT OR IGNORE INTO setting (name, value) values (?, ?)', (setting, ''))
+        self.con.commit()
 
     def value_exists(self, table, field, value):
         query = "SELECT COUNT(*) FROM " + table + " WHERE " + field + " = ?"

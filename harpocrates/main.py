@@ -14,7 +14,6 @@ class Main():
     HOSTNAME = socket.gethostname()
     IP_ADDRESS = socket.gethostbyname(HOSTNAME)
     VERSION = "0.1"
-    SETTINGS = ['pre_register', 'restrict_ip']
 
     def __init__(self,):
         
@@ -35,7 +34,7 @@ class Main():
         pass
 
     def update_settings(self, settings):
-        for setting in Main.SETTINGS:
+        for setting in self.store.SETTINGS:
             if setting in settings:
                 self.store.update('setting', {'value': settings[setting]}, {'name': setting})
             else:
