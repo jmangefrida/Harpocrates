@@ -7,7 +7,7 @@ import sqlite3
 # from werkzeug.datastructures import accept
 
 
-class Log(object):
+class Log():
     TYPE = {'security': 'security_log'}
 
     def __init__(self):
@@ -43,7 +43,7 @@ class Log(object):
         query = query.format(Log.TYPE['security'])
         print(query)
 
-        self.cur.execute(query, (event.subject, event.event_object, event.access_point, event.action, event.outcome, event.msg))
+        self.cur.execute(query, (event.subject, event.object, event.access_point, event.action, event.outcome, event.msg))
         self.con.commit()
 
     def add(self, event):

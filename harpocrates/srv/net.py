@@ -79,7 +79,12 @@ class TCPHandler(socketserver.BaseRequestHandler):
         password = self.sec_com.recv().decode()
         self.sec_com.sendall(b'OK3')
         pub_key = self.sec_com.recv().decode()
-        r = self.server.cmd.register_img(img_name, role_name, username, password, pub_key)
+        r = self.server.cmd.register_img(subject=username,
+                                         access_point=self.client_address[0],
+                                         object=img_name,
+                                         role=role_name,
+                                         password=password,
+                                         pub_key=pub_key)[0]
         if r is not False:
             self.sec_com.sendall(b'OK4')
         else:
@@ -89,13 +94,24 @@ class TCPHandler(socketserver.BaseRequestHandler):
         self.sec_com.sendall(b'OK1')
         client_name = self.sec_com.recv().decode()
         img_name = self.sec_com.recv().decode()
-        cipher, img = self.server.cmd.auth_img(img_name)
+        img = self.server.cmd.get_image(img_name)[0]
+        data = img.start_authenticate()
+        cipher = self.server.cmd.get_cypher(data, img.public_key)
+        #cipher, img = self.server.cmd.auth_img(img_name)
         self.sec_com.sendall(cipher)
         data = self.sec_com.recv()
-        if data == img.data:
+        #if data == img.data:
+        auth = self.server.cmd.auth_img(subject=client_name, 
+                                        access_point=self.client_address[0], 
+                                        object=img_name, data=data, 
+                                        img_data=img.data)[0]
+        if auth is True:
             self.sec_com.sendall(b'OK')
             pub_key = self.sec_com.recv().decode()
-            r = self.server.cmd.register_client(client_name, self.client_address[0], img_name, pub_key)
+            r = self.server.cmd.register_client(subject=client_name,
+                                                access_point=self.client_address[0],
+                                                object=img_name,
+                                                pub_key=pub_key)[0]
             if r is True:
                 self.sec_com.sendall(b'OK')
             else:
@@ -106,13 +122,23 @@ class TCPHandler(socketserver.BaseRequestHandler):
     def request_secret(self):
         self.sec_com.sendall(b'OK1')
         client_name = self.sec_com.recv().decode()
-        cipher, client = self.server.cmd.auth_client(client_name, self.client_address[0])
+        client = self.server.cmd.get_client(client_name)[0]
         if client is None:
             self.sec_com.sendall(b'FAIL')
             return
+        data = client.start_authenticate()
+        cipher = self.server.cmd.get_cypher(data, client.public_key)
+        #cipher, client = self.server.cmd.auth_client(client_name, self.client_address[0])[1]
+        
         self.sec_com.sendall(cipher)
-        data = self.sec_com.recv()
-        if data == client.data:
+        rcv_data = self.sec_com.recv()
+        auth =  self.server.cmd.auth_client(subject=client_name,
+                                        access_point=self.client_address[0],
+                                        object='',
+                                        rcv_data=rcv_data,
+                                        client_data=data)[0]
+        if auth is True:
+        #if data == client.data:
             self.sec_com.sendall(b'OK')
             secret_name = self.sec_com.recv().decode()
             secret = self.server.cmd.request_secret(secret_name, client)

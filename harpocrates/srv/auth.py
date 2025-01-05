@@ -36,7 +36,7 @@ class Secret(object):
             result.append(store)
             return Secret(*result)
         else:
-            raise Exception("Secret does not exist")
+            raise ValueError("Secret does not exist")
 
     @staticmethod
     def new(name, account_name, secret, description, store):
@@ -90,7 +90,7 @@ class Client(object):
             result.append(store)
             return Client(*result)
         else:
-            raise Exception("Client does not exist")
+            raise ValueError("Client does not exist")
 
     @staticmethod
     def new(name, ip_address, image_name, public_key, store):
@@ -146,7 +146,7 @@ class Role(object):
         if result is not None:
             return Role(*result)
         else:
-            raise Exception("Role does not exist")
+            raise ValueError("Role does not exist")
 
     @staticmethod
     def new(name, description, store):
@@ -197,7 +197,7 @@ class Image():
             print(result)
             return Image(*result)
         else:
-            raise Exception("Image does not exist")
+            raise ValueError("Image does not exist")
 
     @staticmethod
     def new(name, date_registered, registered_by, role, public_key, store):

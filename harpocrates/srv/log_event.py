@@ -1,12 +1,12 @@
 import srv.log as log
 
 
-class LogEvent(object):
-    def __init__(self, type='security', subject='', event_object='', access_point='', action='', outcome='', msg=''):
+class LogEvent():
+    def __init__(self, type='security', subject='', object='', access_point='', action='', outcome='', msg=''):
         # self.log = log
         self.type = type
         self.subject = subject
-        self.event_object = event_object
+        self.object = object
         self.access_point = access_point
         self.action = action
         self.outcome = outcome
@@ -35,10 +35,10 @@ def log_event(func):
         event = LogEvent(subject=kwargs['subject'],
                          access_point=kwargs['access_point'], 
                          action=func.__name__, 
-                         event_object=kwargs['event_object'])
-        del kwargs['subject']
-        del kwargs['access_point']
-        del kwargs['event_object']
+                         object=kwargs['object'])
+        # del kwargs['subject']
+        # del kwargs['access_point']
+        # del kwargs['event_object']
         outcome = func(*args, **kwargs)
         if outcome is True:
             event.outcome = 'success'

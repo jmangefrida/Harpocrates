@@ -55,10 +55,13 @@ class User():
                              'last_pass_change',
                              'account_type'],
                             {'username': username})
-        result = list(result)
-        result.append(store)
-        # print(result)
-        return User(*result)
+        
+        if result is not None:
+            result = list(result)
+            result.append(store)
+            return User(*result)
+        else:
+            raise ValueError("User does not exist")
 
     @staticmethod
     def new(username, salt, enc_key, account_type, store):
