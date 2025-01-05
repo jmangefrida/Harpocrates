@@ -7,6 +7,7 @@ from cryptography.exceptions import InvalidSignature
 from cryptography.fernet import InvalidToken
 import enc
 import socket
+from srv.log import Log
 
 
 class Main():
@@ -15,14 +16,15 @@ class Main():
     IP_ADDRESS = socket.gethostbyname(HOSTNAME)
     VERSION = "0.1"
 
-    def __init__(self,):
+    def __init__(self):
         
         self.store = Store()
         self.net_srv = None
         self.status = "stopped"
         self.settings = {}
         self.load_settings()
-        #password = input("password:")
+        self.log = Log()
+        # password = input("password:")
 
     def load_settings(self):
         self.settings = {}
@@ -61,7 +63,6 @@ class Main():
             print(password)
             key = enc.KeyKeeper.decrypt_system_key(password, user.salt, user.enc_key)
             self.keeper = enc.KeyKeeper(self.store, key)
-            print(key)
         except InvalidToken:
             print("Password Incorrect!")
             return False

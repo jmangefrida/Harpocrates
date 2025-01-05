@@ -6,6 +6,8 @@ import enc
 from flask import Flask, request, session, redirect, url_for, render_template
 from flask_login import LoginManager, login_required, login_user, logout_user
 from main import Main
+import srv.log as log
+from srv.log_event import LogEvent
 from functools import wraps
 import os
 
@@ -16,6 +18,12 @@ app.secret_key = os.urandom(128)
 # login_manager.login_view = 'auth.login'
 # login_manager.init_app(app)
 main = Main()
+
+
+# def create_event(subject=session['username'], action=''):
+#     event = LogEvent(log, subject=subject, access_point=request.remote_addr, action=action)
+#     print(event.access_point)
+#     return event
 
 
 def login_required(f):
@@ -45,13 +53,16 @@ def prepare_settings():
 @app.route("/first_run", methods=['POST', 'GET'])
 def first_run():
     if main.check_for_first_run():
+
         if request.method == 'POST':
-            if request.form['password'] == request.form['repassword']:
-                main.first_run(request.form['username'], request.form['password'])
-                return redirect(url_for('dashboard'))
-            else:
-                error = "Passwords do not match"
-                return render_template("first_run.html", error=error)
+            with LogEvent(subject=request.form['username'], action='first_run') as event:
+                if request.form['password'] == request.form['repassword']:
+                    if main.first_run(request.form['username'], request.form['password']):
+                        event.outcome = 'success'
+                        return redirect(url_for('dashboard'))
+                else:
+                    error = "Passwords do not match"
+                    return render_template("first_run.html", error=error)
         return render_template("first_run.html", error=None)
     return render_template("first_run.html", error="Key Gen Error")
 
@@ -62,12 +73,15 @@ def login():
     # logout_user()
     logout()
     if request.method == 'POST':
-        if main.unlock(request.form['username'], request.form['password']):
-            session['username'] = request.form['username']
-            # login_user('username')
-            return redirect(url_for('dashboard'))
-        else:
-            error = "Invalid username/password"
+        with LogEvent(subject=request.form['username'], action='login', access_point=request.remote_addr) as event:
+            if main.unlock(request.form['username'], request.form['password']):
+                session['username'] = request.form['username']
+                # login_user('username')
+                event.outcome = 'success'
+                return redirect(url_for('dashboard'))
+            else:
+                event.outcome = 'fail'
+                error = "Invalid username/password"
 
     if main.check_for_first_run():
         return redirect(url_for('first_run'))
@@ -81,6 +95,7 @@ def dashboard():
     msg = ""
     err = ""
     name = ""
+   
     if 'username' not in session:
         return redirect(url_for('login'))
 
@@ -103,30 +118,62 @@ def dashboard():
             main.cmd.create_secret(name,
                                    request.form['accountname'],
                                    request.form['secret'], 
-                                   request.form['description'])
+                                   request.form['description'],
+                                   subject=session['username'],
+                                   access_point=request.remote_addr,
+                                   event_object=name)
         elif action == "new_role":
             main.cmd.create_role(name,
-                                 request.form['description'])
+                                 request.form['description'],
+                                 subject=session['username'],
+                                 access_point=request.remote_addr,
+                                 event_object=name)
         elif action == "new_image":
             main.cmd.create_image(name,
                                   request.form['role'],
                                   request.form['description'],
-                                  session['username'])
+                                  session['username'],
+                                  subject=session['username'],
+                                  access_point=request.remote_addr,
+                                  event_object=name)
         elif action == "new_admin":
             main.cmd.create_user(name,
-                                 request.form['password'])
+                                 request.form['password'],
+                                 subject=session['username'],
+                                 access_point=request.remote_addr,
+                                 event_object=name)
         elif action == "del_secret":
-            main.cmd.delete_secret(name)
+            main.cmd.delete_secret(name,
+                                   subject=session['username'],
+                                   access_point=request.remote_addr,
+                                   event_object=name)
         elif action == "del_role":
-            main.cmd.delete_role(name)
+            main.cmd.delete_role(name,
+                                 subject=session['username'],
+                                 access_point=request.remote_addr,
+                                 event_object=name)
         elif action == "del_image":
-            main.cmd.delete_image(name)
+            main.cmd.delete_image(name,
+                                  subject=session['username'],
+                                  access_point=request.remote_addr,
+                                  event_object=name)
         elif action == "del_client":
-            main.cmd.delete_client(name)
+            main.cmd.delete_client(name,
+                                   subject=session['username'],
+                                   access_point=request.remote_addr,
+                                   event_object=name)
         elif action == "del_admin":
-            main.cmd.delete_user(name)
+            main.cmd.delete_user(name,
+                                 subject=session['username'],
+                                 access_point=request.remote_addr,
+                                 event_object=name)
     # return "server running"
-    return render_template('dashboard.html', main=main, session=session, keeper=enc.KeyKeeper, msg=msg, err=err)
+    return render_template('dashboard.html', 
+                           main=main, 
+                           session=session, 
+                           keeper=enc.KeyKeeper, 
+                           msg=msg, 
+                           err=err)
 
 
 @login_required
@@ -141,15 +188,6 @@ def settings():
         main.update_settings(settings)
         msg = "Settings Updated"
     return render_template("settings.html", msg=msg, err=err, settings=prepare_settings())
-
-
-@app.route("/stop/")
-def stop():
-    main.net_srv.shutdown()
-    main.server_thread.join()
-    # main.net_srv.server_close()
-    # main.net_srv = None
-    return "stopped"
 
 
 if __name__ == "__main__":

@@ -18,20 +18,11 @@ class TCPHandler(socketserver.BaseRequestHandler):
 
     def handle(self):
         self.request.settimeout(10)
-        # self.rfile is a file-like object created by the handler;
-        # we can now use e.g. readline() instead of raw recv() calls
         self.server.cmd.counter += 1
-        # print("count: " + str(self.server.cmd.counter))
-        print("system key:")
-        print(self.server.cmd.keeper._key)
-        #print(self.server.keeper._key)
-        # print("starting handshake")
         self.hand_shake()
 
         msg = ''
         while True:
-            # msg = self.rfile.readline().strip()
-            # msg = self.request.recv(1024).strip()
             try:
                 msg = self.sec_com.recv()
                 if msg is False:
@@ -39,11 +30,7 @@ class TCPHandler(socketserver.BaseRequestHandler):
             except (ConnectionResetError, AttributeError):
                 return
 
-            # print(msg)
-            # self.data = self.sec_com.decrypt(msg)
-            # print("{} wrote:".format(self.client_address[0]))
             msg = msg.decode()
-            print(msg)
             if msg == "REGISTER_IMG":
                 self.register_img()
                 return
@@ -53,12 +40,7 @@ class TCPHandler(socketserver.BaseRequestHandler):
             elif msg == "REQUEST_SECRET":
                 self.request_secret()
                 return
-            # Likewise, self.wfile is a file-like object used to write back
-            # to the client
-            # self.wfile.write(self.sec_com.encrypt(self.data.upper()))
-            # self.request.sendall(self.sec_com.encrypt(self.data.upper()))
             self.sec_com.sendall(msg.upper().encode())
-
 
     def hand_shake(self):
         """
@@ -70,15 +52,12 @@ class TCPHandler(socketserver.BaseRequestHandler):
         """
         self.sec_com = SecureComm(self.request)
         # Read client key
-        # self.data = self.request.recv(56)
         # Instantiate securecomm object
         self.sec_com.rec_key()
         # Send client our public key
-        # self.request.sendall(self.sec_com.send_key())
         self.sec_com.send_key()
         # Send salt
         self.sec_com.send_salt_data()
-        # self.request.sendall(self.data)
         # finish handshake
         self.sec_com.generate_shared_key()
         print('handshake done')
@@ -96,10 +75,8 @@ class TCPHandler(socketserver.BaseRequestHandler):
         role_name = self.sec_com.recv().decode()
         self.sec_com.sendall(b'OK1')
         username = self.sec_com.recv().decode()
-        # print(username)
         self.sec_com.sendall(b'OK2')
         password = self.sec_com.recv().decode()
-        # print(password)
         self.sec_com.sendall(b'OK3')
         pub_key = self.sec_com.recv().decode()
         r = self.server.cmd.register_img(img_name, role_name, username, password, pub_key)
@@ -139,12 +116,8 @@ class TCPHandler(socketserver.BaseRequestHandler):
             self.sec_com.sendall(b'OK')
             secret_name = self.sec_com.recv().decode()
             secret = self.server.cmd.request_secret(secret_name, client)
-            print('sending secret: ' + secret.account_name)
             self.sec_com.sendall(secret.account_name.encode())
-            print(secret.prepared_secret)
-            print(len(secret.prepared_secret))
             self.sec_com.sendall(secret.prepared_secret)
-            print("success")
         else:
             self.sec_com.sendall(b'FAIL')
 
