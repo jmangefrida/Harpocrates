@@ -4,8 +4,6 @@ Log.py
 
 import sqlite3
 
-# from werkzeug.datastructures import accept
-
 
 class Log():
     TYPE = {'security': 'security_log'}

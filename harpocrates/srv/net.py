@@ -97,10 +97,8 @@ class TCPHandler(socketserver.BaseRequestHandler):
         img = self.server.cmd.get_image(img_name)[0]
         data = img.start_authenticate()
         cipher = self.server.cmd.get_cypher(data, img.public_key)
-        #cipher, img = self.server.cmd.auth_img(img_name)
         self.sec_com.sendall(cipher)
         data = self.sec_com.recv()
-        #if data == img.data:
         auth = self.server.cmd.auth_img(subject=client_name, 
                                         access_point=self.client_address[0], 
                                         object=img_name, data=data, 
@@ -128,17 +126,14 @@ class TCPHandler(socketserver.BaseRequestHandler):
             return
         data = client.start_authenticate()
         cipher = self.server.cmd.get_cypher(data, client.public_key)
-        #cipher, client = self.server.cmd.auth_client(client_name, self.client_address[0])[1]
-        
         self.sec_com.sendall(cipher)
         rcv_data = self.sec_com.recv()
-        auth =  self.server.cmd.auth_client(subject=client_name,
-                                        access_point=self.client_address[0],
-                                        object='',
-                                        rcv_data=rcv_data,
-                                        client_data=data)[0]
+        auth = self.server.cmd.auth_client(subject=client_name,
+                                           access_point=self.client_address[0],
+                                           object='',
+                                           rcv_data=rcv_data,
+                                           client_data=data)[0]
         if auth is True:
-        #if data == client.data:
             self.sec_com.sendall(b'OK')
             secret_name = self.sec_com.recv().decode()
             secret = self.server.cmd.request_secret(secret_name, client)

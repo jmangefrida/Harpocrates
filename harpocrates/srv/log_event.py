@@ -21,14 +21,6 @@ class LogEvent():
     def save(self):
         log.logger.add(self)
 
-    # def success(self):
-    #     self.outcome = 'success'
-    #     log.add(self)
-
-    # def fail(self):
-    #     self.outcome = 'fail'
-    #     self.log.add(self)
-
 
 def log_event(func):
     def inn_log(*args, **kwargs):

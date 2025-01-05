@@ -20,12 +20,6 @@ app.secret_key = os.urandom(128)
 main = Main()
 
 
-# def create_event(subject=session['username'], action=''):
-#     event = LogEvent(log, subject=subject, access_point=request.remote_addr, action=action)
-#     print(event.access_point)
-#     return event
-
-
 def login_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
@@ -117,7 +111,7 @@ def dashboard():
             kwargs = {'subject': session['username'],
                       'access_point': request.remote_addr,
                       'object': name}
-                      
+
         if action == "new_secret":
             main.cmd.create_secret(request.form['accountname'],
                                    request.form['secret'], 

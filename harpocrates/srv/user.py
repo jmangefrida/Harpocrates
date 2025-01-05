@@ -1,9 +1,9 @@
 '''
 user.py
 '''
-from os import access, stat
+# from os import access, stat
 from datetime import datetime
-from enc import KeyKeeper
+# from enc import KeyKeeper
 
 
 class User():

@@ -71,6 +71,7 @@ class Cmd(object):
     @log.log_event
     def register_client(self, client_name, client_ip, img_name, pub_key):
         Client.new(client_name, client_ip, img_name, pub_key, self.store)
+
         return (True, )
 
     @log.log_event
@@ -117,21 +118,25 @@ class Cmd(object):
     @log.log_event
     def delete_role(self, subject, access_point, object):
         Role.delete(object, self.store)
+        
         return (True,)
 
     @log.log_event
     def delete_image(self, subject, access_point, object):
         Image.delete(object, self.store)
+        
         return (True, )
 
     @log.log_event
     def delete_client(self, subject, access_point, object):
         Client.delete(object, self.store)
+        
         return (True, )
 
     @log.log_event
     def delete_user(self, subject, access_point, object):
         User.delete(object, self.store)
+        
         return (True, )
 
     @log.log_event
@@ -139,28 +144,30 @@ class Cmd(object):
         secret = Secret.load(secret_name, self.store)
         role = Role.load(role_name, self.store)
         role.grant(secret.name)
+        
         return (True, )
 
     def list_secrets(self):
         secrets = Secret.find(None, self.store)
+        
         return secrets
 
     def list_clients(self):
         results = Client.find(None, self.store)
+        
         return results
 
     def list_images(self):
         results = Image.find(None, self.store)
+        
         return results
 
     def list_roles(self):
         results = Role.find(None, self.store)
+        
         return results
 
     def list_users(self):
         results = User.find(None, self.store)
-        return results
-
-   
         
-       
+        return results

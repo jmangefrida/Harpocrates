@@ -24,16 +24,12 @@ class Main():
         self.settings = {}
         self.load_settings()
         self.log = Log()
-        # password = input("password:")
 
     def load_settings(self):
         self.settings = {}
-        # result = self.store.execute('select name, value from setting', ())
         result = self.store.find('setting', ['name', 'value'], {})
         for row in result:
             self.settings[row[0]] = row[1]
-        print(result)
-        pass
 
     def update_settings(self, settings):
         for setting in self.store.SETTINGS:
@@ -69,19 +65,12 @@ class Main():
         except TypeError:
             return False
         
-        # print("system key:")
-        # print(key)
-        
-        # user.salt, user.enc_key = self.keeper.update_user_pass('password')
-        # user.save()
-        # self.keeper.first_run_key()
         self.start()
 
         return True
 
     def start(self):
         self.cmd = Cmd(self.keeper, self)
-        # self.cmd.keeper.first_run_key()
         try:
             if self.status == 'stopped':
                 self.net_srv = ThreadServer((Main.HOST, Main.PORT), self.cmd)
