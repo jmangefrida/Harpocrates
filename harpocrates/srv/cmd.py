@@ -68,24 +68,6 @@ class Cmd(object):
         else:
             return (False, )
 
-    # @log.log_event
-    # def auth_img(self, img_name):
-    #     img = Image.load(img_name, self.store)
-    #     data = img.start_authenticate()
-    #     cipher = KeyKeeper.encrypt_with_client_key(data, img.public_key)
-    #     return (True, [cipher, img])
-
-    # @log.log_event
-    # def auth_client(self, client_name, client_ip):
-    #     client = Client.load(client_name, self.store)
-    #     # if restrict_ip is on, check to make sure the client is using the same IP
-    #     if self.main.settings['restrict_ip'] == 'on' and client.ip_address != client_ip:
-    #         return (False, [None, None])
-    #     data = client.start_authenticate()
-    #     cipher = KeyKeeper.encrypt_with_client_key(data, client.public_key)
-    #     
-    #     return (True, [cipher, client])
-
     @log.log_event
     def register_client(self, client_name, client_ip, img_name, pub_key):
         Client.new(client_name, client_ip, img_name, pub_key, self.store)
@@ -101,51 +83,55 @@ class Cmd(object):
         return (True, secret)
 
     @log.log_event
-    def create_secret(self, secret_name, account_name, account_pass, description):
+    def create_secret(self, account_name, account_pass, description, subject, access_point, object):
         account_secret = self.keeper.encrypt_secret(account_pass)
-        Secret.new(secret_name, account_name, account_secret, description, self.store)
+        Secret.new(object, account_name, account_secret, description, self.store)
         
         return (True,)
     
     @log.log_event
-    def create_role(self, role_name, description):
-        Role.new(role_name, description, self.store)
+    def create_role(self, description, subject, access_point, object):
+        Role.new(object, description, self.store)
+        
         return (True,)
 
     @log.log_event
-    def create_image(self, name, role_name, description, user):
-        Image.new(name, None, user, role_name, None, self.store)
+    def create_image(self, role_name, description, subject, access_point, object):
+        Image.new(object, None, subject, role_name, None, self.store)
+        
         return (True,)
 
     @log.log_event
-    def create_user(self, name, password):
+    def create_user(self, password, subject, access_point, object):
         salt, enc_key = self.keeper.update_user_pass(password)
-        User.new(name, salt, enc_key, 'admin', self.store)
+        User.new(object, salt, enc_key, 'admin', self.store)
+        
         return (True,)
 
     @log.log_event
-    def delete_secret(self, name):
-        Secret.delete(name, self.store)
+    def delete_secret(self, subject, access_point, object):
+        Secret.delete(object, self.store)
+
         return (True, )
 
     @log.log_event
-    def delete_role(self, name):
-        Role.delete(name, self.store)
+    def delete_role(self, subject, access_point, object):
+        Role.delete(object, self.store)
         return (True,)
 
     @log.log_event
-    def delete_image(self, name):
-        Image.delete(name, self.store)
+    def delete_image(self, subject, access_point, object):
+        Image.delete(object, self.store)
         return (True, )
 
     @log.log_event
-    def delete_client(self, name):
-        Client.delete(name, self.store)
+    def delete_client(self, subject, access_point, object):
+        Client.delete(object, self.store)
         return (True, )
 
     @log.log_event
-    def delete_user(self, name):
-        User.delete(name, self.store)
+    def delete_user(self, subject, access_point, object):
+        User.delete(object, self.store)
         return (True, )
 
     @log.log_event

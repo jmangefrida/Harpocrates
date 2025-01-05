@@ -95,7 +95,7 @@ def dashboard():
     msg = ""
     err = ""
     name = ""
-   
+    kwargs = {}
     if 'username' not in session:
         return redirect(url_for('login'))
 
@@ -114,59 +114,35 @@ def dashboard():
                 err = result[1]
         else:
             name = request.form['name']
+            kwargs = {'subject': session['username'],
+                      'access_point': request.remote_addr,
+                      'object': name}
+                      
         if action == "new_secret":
-            main.cmd.create_secret(name,
-                                   request.form['accountname'],
+            main.cmd.create_secret(request.form['accountname'],
                                    request.form['secret'], 
                                    request.form['description'],
-                                   subject=session['username'],
-                                   access_point=request.remote_addr,
-                                   event_object=name)
+                                   **kwargs)
         elif action == "new_role":
-            main.cmd.create_role(name,
-                                 request.form['description'],
-                                 subject=session['username'],
-                                 access_point=request.remote_addr,
-                                 event_object=name)
+            main.cmd.create_role(request.form['description'],
+                                 **kwargs)
         elif action == "new_image":
-            main.cmd.create_image(name,
-                                  request.form['role'],
+            main.cmd.create_image(request.form['role'],
                                   request.form['description'],
-                                  session['username'],
-                                  subject=session['username'],
-                                  access_point=request.remote_addr,
-                                  event_object=name)
+                                  **kwargs)
         elif action == "new_admin":
-            main.cmd.create_user(name,
-                                 request.form['password'],
-                                 subject=session['username'],
-                                 access_point=request.remote_addr,
-                                 event_object=name)
+            main.cmd.create_user(request.form['password'],
+                                 **kwargs)
         elif action == "del_secret":
-            main.cmd.delete_secret(name,
-                                   subject=session['username'],
-                                   access_point=request.remote_addr,
-                                   event_object=name)
+            main.cmd.delete_secret(**kwargs)
         elif action == "del_role":
-            main.cmd.delete_role(name,
-                                 subject=session['username'],
-                                 access_point=request.remote_addr,
-                                 event_object=name)
+            main.cmd.delete_role(**kwargs)
         elif action == "del_image":
-            main.cmd.delete_image(name,
-                                  subject=session['username'],
-                                  access_point=request.remote_addr,
-                                  event_object=name)
+            main.cmd.delete_image(**kwargs)
         elif action == "del_client":
-            main.cmd.delete_client(name,
-                                   subject=session['username'],
-                                   access_point=request.remote_addr,
-                                   event_object=name)
+            main.cmd.delete_client(**kwargs)
         elif action == "del_admin":
-            main.cmd.delete_user(name,
-                                 subject=session['username'],
-                                 access_point=request.remote_addr,
-                                 event_object=name)
+            main.cmd.delete_user(**kwargs)
     # return "server running"
     return render_template('dashboard.html', 
                            main=main, 

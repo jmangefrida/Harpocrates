@@ -39,7 +39,7 @@ def log_event(func):
         # del kwargs['subject']
         # del kwargs['access_point']
         # del kwargs['event_object']
-        outcome = func(*args, **kwargs)
+        outcome = func(*args, **kwargs)[0]
         if outcome is True:
             event.outcome = 'success'
         else:
