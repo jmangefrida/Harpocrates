@@ -63,6 +63,8 @@ class Store(object):
                          role VARCHAR(64),
                          public_key VARCHAR(2048),
                          FOREIGN KEY (role) REFERENCES role (name))""")
+        cur.execute("""CREATE UNIQUE INDEX unq_role_grant ON role_grant
+                        ( role_name, secret_name )""")
         self.con.commit()
 
     def popluate_initial_values(self):
