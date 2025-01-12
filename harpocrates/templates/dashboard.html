@@ -219,6 +219,7 @@
 	var roles = `{% for role in main.cmd.list_roles() %}
 		<option>{{ role[0] }}</option>
 	{% endfor %}`;
+	var roles_json = {{ main.cmd.list_roles() | tojson() }}
 </script>
 <script src="/static/js/main.js"></script>
 </div>

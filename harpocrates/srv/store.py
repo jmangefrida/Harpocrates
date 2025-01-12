@@ -176,3 +176,6 @@ class Store(object):
         # print(encoded)
         # return marks, encoded
         return marks, values
+
+
+store = Store()

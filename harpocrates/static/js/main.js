@@ -60,6 +60,18 @@ var addadmin = `
 </form>
 `;
 
+var managegrant = `
+<h3>Add Grant</h3>
+<p>
+<form method=post>
+  <input name='action' type='hidden' value='manage_grant'>
+  <input name='name' type='text' placeholder='Name'>
+  <p><p>
+  <input name='description' type='text' placeholder='Description'>
+  <p>
+  <input type='submit' name='submit' value='Save'>
+</form>
+`;
 
 var modal = document.getElementById("myModal");
 

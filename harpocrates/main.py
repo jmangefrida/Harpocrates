@@ -8,6 +8,9 @@ from cryptography.fernet import InvalidToken
 import enc
 import socket
 from srv.log import Log
+import srv.store
+
+store = srv.store.store
 
 
 class Main():
@@ -18,7 +21,6 @@ class Main():
 
     def __init__(self):
         
-        self.store = Store()
         self.net_srv = None
         self.status = "stopped"
         self.settings = {}
@@ -27,20 +29,20 @@ class Main():
 
     def load_settings(self):
         self.settings = {}
-        result = self.store.find('setting', ['name', 'value'], {})
+        result = store.find('setting', ['name', 'value'], {})
         for row in result:
             self.settings[row[0]] = row[1]
 
     def update_settings(self, settings):
-        for setting in self.store.SETTINGS:
+        for setting in store.SETTINGS:
             if setting in settings:
-                self.store.update('setting', {'value': settings[setting]}, {'name': setting})
+                store.update('setting', {'value': settings[setting]}, {'name': setting})
             else:
-                self.store.update('setting', {'value': ''}, {'name': setting})
+                store.update('setting', {'value': ''}, {'name': setting})
         self.load_settings()
 
     def check_for_first_run(self):
-        result = self.store.find('user', ['username'], ())
+        result = store.find('user', ['username'], ())
         if len(result) == 0:
             return True
         else:
@@ -48,17 +50,17 @@ class Main():
 
     def first_run(self, username, password):
         key = enc.KeyKeeper._generate_primary_key()
-        self.keeper = enc.KeyKeeper(self.store, key)
+        self.keeper = enc.KeyKeeper(store, key)
         salt, enc_key = self.keeper.update_user_pass(password)
-        user = User.new(username, salt, enc_key, 'admin', self.store)
+        user = User.new(username, salt, enc_key, 'admin')
         return user
 
     def unlock(self, username, password):
         try:
-            user = User.load(username, self.store)
+            user = User.load(username)
             print(password)
             key = enc.KeyKeeper.decrypt_system_key(password, user.salt, user.enc_key)
-            self.keeper = enc.KeyKeeper(self.store, key)
+            self.keeper = enc.KeyKeeper(store, key)
         except InvalidToken:
             print("Password Incorrect!")
             return False

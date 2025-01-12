@@ -7,9 +7,12 @@ from flask import Flask, request, session, redirect, url_for, render_template
 from flask_login import LoginManager, login_required, login_user, logout_user
 from main import Main
 import srv.log as log
+import srv.store
 from srv.log_event import LogEvent
 from functools import wraps
 import os
+
+store = srv.store.store
 
 app = Flask(__name__)
 app.secret_key = os.urandom(128)
@@ -36,7 +39,7 @@ def logout():
 
 def prepare_settings():
     settings = {}
-    for setting in main.store.SETTINGS:
+    for setting in store.SETTINGS:
         if setting not in main.settings:
             settings[setting] = ""
         elif main.settings[setting] == "on":

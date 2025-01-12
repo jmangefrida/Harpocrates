@@ -84,7 +84,7 @@ class TCPHandler(socketserver.BaseRequestHandler):
                                          object=img_name,
                                          role=role_name,
                                          password=password,
-                                         pub_key=pub_key)[0]
+                                         pub_key=pub_key)
         if r is not False:
             self.sec_com.sendall(b'OK4')
         else:

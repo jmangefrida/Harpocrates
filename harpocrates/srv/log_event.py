@@ -24,6 +24,9 @@ class LogEvent():
 
 def log_event(func):
     def inn_log(*args, **kwargs):
+        print('logging')
+        print(kwargs)
+        print(args)
         event = LogEvent(subject=kwargs['subject'],
                          access_point=kwargs['access_point'], 
                          action=func.__name__, 

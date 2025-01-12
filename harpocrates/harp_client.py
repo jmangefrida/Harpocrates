@@ -12,7 +12,7 @@ def register_image(host, port):
 
     client = net.NetClient(host, port)
     client.connect()
-    result = client.register_image("testimg", "testrole", "testadmin", "password", public_key)
+    result = client.register_image("testimg", "testrole", "admin", "qaz", public_key)
 
     if result is True:
         print("success")

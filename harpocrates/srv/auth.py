@@ -2,34 +2,37 @@
 auth.py
 '''
 import os
-from srv.store import Store
+import srv.store
+
+store = srv.store.store
 
 
 class Secret(object):
     """docstring for Secret"""
-    def __init__(self, name, account_name, secret, description, store):
+    def __init__(self, name, account_name, secret, description):
         super(Secret, self).__init__()
         self.name = name
         self.account_name = account_name
         self.secret = secret
         self.description = description
-        self.store = store
         self.prepared_secret = b''
 
     def save(self):
-        self.store.update('secret',
-                          {'account_name': self.account_name,
-                           'secret': self.secret,
-                           'description': self.description},
-                          {'name': self.name})
+        store.update('secret',
+                     {'account_name': self.account_name,
+                      'secret': self.secret,
+                      'description': self.description},
+                     {'name': self.name})
 
     @staticmethod
-    def delete(name, store):
+    def delete(name):
         return store.delete('secret', {'name': name})        
 
     @staticmethod
-    def load(name, store):
-        result = store.read('secret', ['name', 'account_name', 'secret', 'description'], {'name': name})
+    def load(name):
+        result = store.read('secret', 
+                            ['name', 'account_name', 'secret', 'description'], 
+                            {'name': name})
 
         if result is not None:
             result = list(result)
@@ -39,20 +42,20 @@ class Secret(object):
             raise ValueError("Secret does not exist")
 
     @staticmethod
-    def new(name, account_name, secret, description, store):
+    def new(name, account_name, secret, description):
         try:
             store.create('secret',
                          {'name': name,
                           'account_name': account_name,
                           'secret': secret,
                           'description': description})
-            return Secret.load(name, store)
+            return Secret.load(name)
 
         except:
             return None
 
     @staticmethod
-    def find(filters, store):
+    def find(filters):
         if filters is None:
             filters = {}
         results = store.find('secret', ['name', 'description'], filters)
@@ -61,30 +64,30 @@ class Secret(object):
 
 class Client(object):
     """docstring for Client"""
-    def __init__(self, name, ip_address, image_name, public_key, store):
+    def __init__(self, name, ip_address, image_name, public_key):
         super(Client, self).__init__()
         self.name = name
         self.ip_address = ip_address
         self.image_name = image_name
         self.public_key = public_key
-        self.store = store
 
     def start_authenticate(self):
         self.data = os.urandom(32)
         return self.data
 
     def save(self):
-        self.store.update('client',
-                          {'ip_address', self.ip_address,
-                           'role', self.role,
-                           'public_key', self.public_key,
-                           'store', self.store},
-                          {'name': self.name})
+        store.update('client',
+                     {'ip_address', self.ip_address,
+                      'role', self.role,
+                      'public_key', self.public_key},
+                     {'name': self.name})
 
     @staticmethod
-    def load(name, store):
+    def load(name):
        
-        result = store.read('client', ['name', 'ip_address', 'image_name', 'public_key'], {'name': name})
+        result = store.read('client', 
+                            ['name', 'ip_address', 'image_name', 'public_key'], 
+                            {'name': name})
         if result is not None:
             result = list(result)
             result.append(store)
@@ -93,16 +96,20 @@ class Client(object):
             raise ValueError("Client does not exist")
 
     @staticmethod
-    def new(name, ip_address, image_name, public_key, store):
-        store.create('client', {'name': name, 'ip_address': ip_address, 'image_name': image_name, 'public_key': public_key})
-        return Client.load(name, store)
+    def new(name, ip_address, image_name, public_key):
+        store.create('client', 
+                     {'name': name,
+                      'ip_address': ip_address,
+                      'image_name': image_name, 
+                      'public_key': public_key})
+        return Client.load(name)
 
     @staticmethod
-    def delete(name, store):
+    def delete(name):
         store.delete('client', {'name': name})
 
     @staticmethod
-    def find(filters, store):
+    def find(filters):
         if filters is None:
             filters = {}
         results = store.find('client', ['name', 'image_name', 'ip_address'], filters)
@@ -115,7 +122,6 @@ class Role(object):
         super(Role, self).__init__()
         self.name = name
         self.description = description
-        self.store = Store()
 
     def request(self, secret_name):
         '''
@@ -123,25 +129,27 @@ class Role(object):
         to have it.  If so provide it, otherwise deny request
         '''
 
-        grants = self.store.read('role_grant', ['count(id)'], {'role_name': self.name, 'secret_name': secret_name})
+        grants = store.read('role_grant', 
+                            ['count(id)'], 
+                            {'role_name': self.name, 'secret_name': secret_name})
 
         if grants[0] == 1:
-            return Secret.load(secret_name, self.store)
+            return Secret.load(secret_name)
         else:
             raise Exception("Not Authorized")
 
     def grant(self, secret_name):
 
-        self.store.create('role_grant', {'role_name': self.name, 'secret_name': secret_name})
+        store.create('role_grant', {'role_name': self.name, 'secret_name': secret_name})
 
         return True
 
     def revoke(self, role_name, secret_name):
 
-        self.store.delete('role_grant', {'role_name': role_name, 'secret_name': secret_name})
+        store.delete('role_grant', {'role_name': role_name, 'secret_name': secret_name})
 
     @staticmethod
-    def load(name, store):
+    def load(name):
         result = store.read('role', ['name', 'description'], {'name': name})
         if result is not None:
             return Role(*result)
@@ -149,17 +157,17 @@ class Role(object):
             raise ValueError("Role does not exist")
 
     @staticmethod
-    def new(name, description, store):
+    def new(name, description):
         store.create('role', {'name': name, 'description': description})
-        return Role.load(name, store)
+        return Role.load(name)
 
     @staticmethod
-    def delete(name, store):
+    def delete(name):
         store.delete('role_grant', {'role_name': name})
         store.delete('role', {'name': name})
 
     @staticmethod
-    def find(filters, store):
+    def find(filters):
         if filters is None:
             filters = {}
         results = store.find('role', ['name', 'description'], filters)
@@ -167,40 +175,38 @@ class Role(object):
 
 
 class Image():
-    def __init__(self, name, date_registered, registerd_by, role, public_key, store) -> None:
+    def __init__(self, name, date_registered, registerd_by, role, public_key) -> None:
         self.name = name
         self.date_registered = date_registered
         self.registerd_by = registerd_by
         self.role = role
         self.public_key = public_key
-        self.store = store
  
     def save(self):
-        self.store.update('image',
-                          {'date_registered': self.date_registered,
-                           'registerd_by': self.registerd_by,
-                           'role': self.role,
-                           'public_key': self.public_key},
-                          {'name': self.name})
+        store.update('image',
+                     {'date_registered': self.date_registered,
+                      'registerd_by': self.registerd_by,
+                      'role': self.role,
+                      'public_key': self.public_key},
+                     {'name': self.name})
 
     def start_authenticate(self):
         self.data = os.urandom(32)
         return self.data
 
     @staticmethod
-    def load(name, store):
-        result = store.read('image', ['name', 'date_registered', 'registered_by', 'role', 'public_key'], {'name': name})
+    def load(name):
+        result = store.read('image',
+                            ['name', 'date_registered', 'registered_by', 'role', 'public_key'],
+                            {'name': name})
         if result is not None:
-            print(result)
-            result = list(result)
-            result.append(store)
-            print(result)
+            
             return Image(*result)
         else:
             raise ValueError("Image does not exist")
 
     @staticmethod
-    def new(name, date_registered, registered_by, role, public_key, store):
+    def new(name, date_registered, registered_by, role, public_key):
 
         if date_registered is None:
             date_registered = 'now()'
@@ -213,14 +219,14 @@ class Image():
                       'registered_by': registered_by,
                       'role': role,
                       'public_key': public_key})
-        return Image.load(name, store)
+        return Image.load(name)
 
     @staticmethod
-    def delete(name, store):
+    def delete(name):
         store.delete('image', {'name': name})
 
     @staticmethod
-    def find(filters, store):
+    def find(filters):
         if filters is None:
             filters = {}
         results = store.find('image', ['name', 'role', 'registered_by'], filters)
