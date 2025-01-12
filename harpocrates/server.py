@@ -3,7 +3,7 @@ import sqlite3
 
 # from srv.auth import Secret
 import enc
-from flask import Flask, request, session, redirect, url_for, render_template
+from flask import Flask, request, session, redirect, url_for, render_template, jsonify
 from flask_login import LoginManager, login_required, login_user, logout_user
 from main import Main
 import srv.log as log
@@ -130,6 +130,9 @@ def dashboard():
         elif action == "new_admin":
             main.cmd.create_user(request.form['password'],
                                  **kwargs)
+        elif action == "add_grant":
+            main.cmd.create_grant(request.form['role'],
+                                  **kwargs)
         elif action == "del_secret":
             main.cmd.delete_secret(**kwargs)
         elif action == "del_role":
@@ -140,6 +143,10 @@ def dashboard():
             main.cmd.delete_client(**kwargs)
         elif action == "del_admin":
             main.cmd.delete_user(**kwargs)
+        elif action == "del_grant":
+            main.cmd.delete_grant(request.form['role'],
+                                  **kwargs)
+        
     # return "server running"
     return render_template('dashboard.html', 
                            main=main, 
@@ -161,6 +168,20 @@ def settings():
         main.update_settings(settings)
         msg = "Settings Updated"
     return render_template("settings.html", msg=msg, err=err, settings=prepare_settings())
+
+
+@login_required
+@app.route('/grants/<role_name>')
+def grants(role_name):
+
+    return jsonify(main.cmd.list_grants(role_name))
+
+
+@login_required
+@app.route('/secrets')
+def secrets():
+
+    return jsonify(main.cmd.list_secrets())
 
 
 if __name__ == "__main__":

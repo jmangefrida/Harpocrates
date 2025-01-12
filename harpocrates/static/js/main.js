@@ -60,18 +60,7 @@ var addadmin = `
 </form>
 `;
 
-var managegrant = `
-<h3>Add Grant</h3>
-<p>
-<form method=post>
-  <input name='action' type='hidden' value='manage_grant'>
-  <input name='name' type='text' placeholder='Name'>
-  <p><p>
-  <input name='description' type='text' placeholder='Description'>
-  <p>
-  <input type='submit' name='submit' value='Save'>
-</form>
-`;
+
 
 var modal = document.getElementById("myModal");
 
@@ -106,6 +95,70 @@ admin_btn.onclick = function() {
   modal.style.display = "block";
   modalbody.innerHTML = addadmin;
 }
+
+function manage_grant(role) {
+
+  var managegrant = `
+    <h3>Add Grant - ${role} </h3>
+    <p>
+    <form method=post>
+      <input name='action' type='hidden' value='add_grant'>
+      <input name='role' type='hidden' value='${role}'>
+      <select id='select_grant' name='name' placeholder='Name'>
+      </select>
+      <p><p>
+      <p>
+      <input type='submit' name='submit' value='Add'>
+    </form>
+    <table id='tbl_grants'>
+    </table>
+    `;
+
+  modalbody.innerHTML = managegrant;
+
+  fetch('/secrets')
+  .then(response => response.json())
+  .then(data => {
+    console.log(data);
+    data.forEach(function(item, index) {
+      var select = document.getElementById("select_grant");
+      var option = document.createElement("option")
+      option.value = item[0];
+      option.innerHTML = item[0];
+      select.add(option);
+    });
+  })
+  .catch(error => {
+    console.error("Error: ", error);
+  });
+
+  fetch('/grants/' + role)
+  .then(response => response.json())
+  .then(data => {
+    console.log(data);
+    data.forEach(function(item, index) {
+      var table = document.getElementById("tbl_grants");
+      var row = table.insertRow(-1);
+      row.insertCell(0).innerHTML = item
+      var delgrant = `<form method="post" onsubmit="return confirm('Are you sure you want to delete this role?')">
+                        <input  name="action" type="hidden" value="del_grant">
+                        <input type="hidden" value="${role}" name="role">
+                        <input type="hidden" value="${item}" name="name">
+                        <input type="submit" value="X" class="button tag error">
+                        </form>`;
+      row.insertCell(1).innerHTML = delgrant;
+      
+    });
+
+  })
+  .catch(error => {
+    console.error("Error: ", error);
+  });
+
+  modal.style.display = "block";
+  
+}
+
 
 // When the user clicks on <span> (x), close the modal
 span.onclick = function() {

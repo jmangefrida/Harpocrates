@@ -35,8 +35,6 @@ class Secret(object):
                             {'name': name})
 
         if result is not None:
-            result = list(result)
-            result.append(store)
             return Secret(*result)
         else:
             raise ValueError("Secret does not exist")
@@ -144,6 +142,14 @@ class Role(object):
 
         return True
 
+    def get_grants(self):
+
+        results = store.find('role_grant', ['secret_name'], {'role_name': self.name})
+        return [x[0] for x in results]
+
+    def delete_grant(self, secret_name):
+        store.delete('role_grant', {'role_name': self.name, 'secret_name': secret_name})
+
     def revoke(self, role_name, secret_name):
 
         store.delete('role_grant', {'role_name': role_name, 'secret_name': secret_name})
@@ -171,6 +177,13 @@ class Role(object):
         if filters is None:
             filters = {}
         results = store.find('role', ['name', 'description'], filters)
+        return results
+
+    @staticmethod
+    def find_grants(filters):
+        if filters is None:
+            filters = {}
+        results = store.find('role_grant', ['id', 'role_name', 'secret_name'], filters)
         return results
 
 

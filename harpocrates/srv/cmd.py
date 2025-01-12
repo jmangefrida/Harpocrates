@@ -109,6 +109,14 @@ class Cmd(object):
         return (True,)
 
     @log.log_event
+    def create_grant(self, role_name, subject, access_point, object):
+        secret = Secret.load(object)
+        role = Role.load(role_name)
+        role.grant(secret.name)
+        
+        return (True, )
+
+    @log.log_event
     def delete_secret(self, subject, access_point, object):
         Secret.delete(object)
 
@@ -139,11 +147,10 @@ class Cmd(object):
         return (True, )
 
     @log.log_event
-    def grant(self, role_name, secret_name):
-        secret = Secret.load(secret_name)
+    def delete_grant(self, role_name, subject, access_point, object):
         role = Role.load(role_name)
-        role.grant(secret.name)
-        
+        role.delete_grant(object)
+
         return (True, )
 
     def list_secrets(self):
@@ -170,3 +177,8 @@ class Cmd(object):
         results = User.find(None)
         
         return results
+
+    def list_grants(self, role_name):
+        #results = Role.find_grants(None)
+        role = Role.load(role_name)
+        return role.get_grants()

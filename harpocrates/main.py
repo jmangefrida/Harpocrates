@@ -42,7 +42,7 @@ class Main():
         self.load_settings()
 
     def check_for_first_run(self):
-        result = store.find('user', ['username'], ())
+        result = store.find('user', ['username'], {})
         if len(result) == 0:
             return True
         else:
